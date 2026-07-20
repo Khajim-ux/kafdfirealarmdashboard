@@ -14,16 +14,147 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          action: string
+          actor: string | null
+          changes: Json | null
+          created_at: string
+          id: string
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
+      troubles: {
+        Row: {
+          alarm_type: Database["public"]["Enums"]["alarm_type"]
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          device_id: string
+          device_type: string | null
+          event_at: string
+          floor: string | null
+          id: string
+          location: string | null
+          panel: string | null
+          parcel: string
+          photo_url: string | null
+          qr_code: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          technician: string | null
+          tenant: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          alarm_type?: Database["public"]["Enums"]["alarm_type"]
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          device_id: string
+          device_type?: string | null
+          event_at?: string
+          floor?: string | null
+          id?: string
+          location?: string | null
+          panel?: string | null
+          parcel: string
+          photo_url?: string | null
+          qr_code?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          technician?: string | null
+          tenant?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          alarm_type?: Database["public"]["Enums"]["alarm_type"]
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          device_id?: string
+          device_type?: string | null
+          event_at?: string
+          floor?: string | null
+          id?: string
+          location?: string | null
+          panel?: string | null
+          parcel?: string
+          photo_url?: string | null
+          qr_code?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          technician?: string | null
+          tenant?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      alarm_type: "trouble" | "supervisory" | "fire_alarm" | "disabled"
+      app_role: "admin" | "operator" | "viewer"
+      ticket_status: "open" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +281,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alarm_type: ["trouble", "supervisory", "fire_alarm", "disabled"],
+      app_role: ["admin", "operator", "viewer"],
+      ticket_status: ["open", "closed"],
+    },
   },
 } as const
