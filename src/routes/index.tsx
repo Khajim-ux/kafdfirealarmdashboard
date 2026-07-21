@@ -98,6 +98,7 @@ function Dashboard() {
       supervisory: rows.filter((r) => r.alarm_type === "supervisory" && isOpen(r)).length,
       fire: rows.filter((r) => r.alarm_type === "fire_alarm" && isOpen(r)).length,
       disabled: rows.filter((r) => r.alarm_type === "disabled" && isOpen(r)).length,
+      monitor: rows.filter((r) => r.alarm_type === "monitor_alert" && isOpen(r)).length,
       closed: rows.filter((r) => r.status === "closed").length,
       open: rows.filter(isOpen).length,
     };
