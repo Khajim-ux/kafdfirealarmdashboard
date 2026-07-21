@@ -109,19 +109,41 @@ function Dashboard() {
     PARCELS.map((p) => ({ parcel: p, count: rows.filter((r) => r.parcel === p && r.alarm_type === "trouble").length })),
   [rows]);
 
-  const dailyTrend = useMemo(() => {
+  const [trendPeriod, setTrendPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
+
+  const trendData = useMemo(() => {
     const map = new Map<string, number>();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      map.set(format(d, "MM-dd"), 0);
+    const now = new Date();
+    if (trendPeriod === "daily") {
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        map.set(format(d, "MM-dd"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(new Date(r.event_at), "MM-dd");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
+    } else if (trendPeriod === "weekly") {
+      for (let i = 11; i >= 0; i--) {
+        const d = startOfWeek(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7));
+        map.set(format(d, "MM-dd"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(startOfWeek(new Date(r.event_at)), "MM-dd");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
+    } else {
+      for (let i = 11; i >= 0; i--) {
+        const d = startOfMonth(new Date(now.getFullYear(), now.getMonth() - i, 1));
+        map.set(format(d, "yyyy-MM"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(startOfMonth(new Date(r.event_at)), "yyyy-MM");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
     }
-    rows.forEach((r) => {
-      if (r.alarm_type !== "trouble") return;
-      const k = format(new Date(r.event_at), "MM-dd");
-      if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
-    });
-    return Array.from(map, ([day, count]) => ({ day, count }));
-  }, [rows]);
+    return Array.from(map, ([label, count]) => ({ label, count }));
+  }, [rows, trendPeriod]);
 
   const openClosed = [
     { name: "Open", value: kpis.open },
@@ -132,6 +154,25 @@ function Dashboard() {
     name: t.label,
     value: rows.filter((r) => r.alarm_type === t.value).length,
   }));
+
+  const deviceTypeCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r) => {
+      if (!r.device_type) return;
+      m.set(r.device_type, (m.get(r.device_type) ?? 0) + 1);
+    });
+    return Array.from(m, ([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [rows]);
+
+  const analytics = useMemo(() => {
+    const totalAlarms = rows.filter((r) => r.alarm_type === "fire_alarm").length;
+    const totalTroubles = rows.filter((r) => r.alarm_type === "trouble").length;
+    const totalSupervisory = rows.filter((r) => r.alarm_type === "supervisory").length;
+    const totalMonitor = rows.filter((r) => r.alarm_type === "monitor_alert").length;
+    const totalDeviceTypes = deviceTypeCounts.length;
+    const mostFrequent = deviceTypeCounts[0]?.name ?? "—";
+    return { totalAlarms, totalTroubles, totalSupervisory, totalMonitor, totalDeviceTypes, mostFrequent };
+  }, [rows, deviceTypeCounts]);
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
   const cssColors = ["#dc2626", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"];
