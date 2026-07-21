@@ -122,11 +122,14 @@ export function TroubleFormDialog({
             </div>
             <div className="space-y-1"><Label>Floor</Label><Input value={form.floor ?? ""} onChange={(e) => upd("floor", e.target.value)} /></div>
             <div className="space-y-1">
-              <Label>Device Type</Label>
-              <Select value={form.device_type ?? ""} onValueChange={(v) => upd("device_type", v)}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>{DEVICE_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-              </Select>
+              <Label>Device/Event Type *</Label>
+              <SearchableSelect
+                value={form.device_type ?? ""}
+                onChange={(v) => upd("device_type", v)}
+                options={DEVICE_TYPES as unknown as string[]}
+                placeholder="Select device/event…"
+                searchPlaceholder="Search device/event…"
+              />
             </div>
             <div className="space-y-1">
               <Label>Alarm Type</Label>
@@ -142,7 +145,7 @@ export function TroubleFormDialog({
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1"><Label>Technician</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Operator Name</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
             <div className="space-y-1"><Label>Tenant</Label><Input value={form.tenant ?? ""} onChange={(e) => upd("tenant", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => upd("description", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2">
