@@ -335,8 +335,15 @@ function Dashboard() {
               <Input placeholder="Floor" value={fFloor} onChange={(e) => setFFloor(e.target.value)} />
               <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
               <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
-              <Select value={fDeviceType} onValueChange={setFDeviceType}><SelectTrigger><SelectValue placeholder="Device" /></SelectTrigger><SelectContent><SelectItem value="all">All devices</SelectItem>{DEVICE_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              <Input placeholder="Technician" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <SearchableSelect
+                value={fDeviceType}
+                onChange={setFDeviceType}
+                options={DEVICE_TYPES as unknown as string[]}
+                allOption={{ value: "all", label: "All device/events" }}
+                placeholder="Device/Event"
+                searchPlaceholder="Search device/event…"
+              />
+              <Input placeholder="Operator" value={fTech} onChange={(e) => setFTech(e.target.value)} />
               <Input placeholder="Tenant" value={fTenant} onChange={(e) => setFTenant(e.target.value)} />
               <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
             </CardContent></Card>
