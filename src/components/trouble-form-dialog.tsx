@@ -11,6 +11,7 @@ import { generateQrDataUrl } from "@/lib/exports";
 import { toast } from "sonner";
 import { QrCode, Camera, ScanLine } from "lucide-react";
 import { QrScannerDialog } from "./qr-scanner-dialog";
+import { SearchableSelect } from "./searchable-select";
 import { useAuth } from "@/hooks/use-auth";
 
 type FormShape = Partial<Trouble>;
