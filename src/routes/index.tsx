@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
-  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon,
+  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
