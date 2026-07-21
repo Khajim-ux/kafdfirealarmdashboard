@@ -8,6 +8,7 @@ export const ALARM_TYPES = [
   { value: "supervisory", label: "Supervisory" },
   { value: "fire_alarm", label: "Fire Alarm" },
   { value: "disabled", label: "Disabled" },
+  { value: "monitor_alert", label: "Monitor Alert" },
 ] as const;
 
 export const STATUSES = [
@@ -20,7 +21,7 @@ export const DEVICE_TYPES = [
   "Horn/Strobe","Control Module","Monitor Module","Panel","Other",
 ] as const;
 
-export type AlarmType = "trouble" | "supervisory" | "fire_alarm" | "disabled";
+export type AlarmType = "trouble" | "supervisory" | "fire_alarm" | "disabled" | "monitor_alert";
 export type TicketStatus = "open" | "closed";
 export type AppRole = "admin" | "operator" | "viewer";
 
