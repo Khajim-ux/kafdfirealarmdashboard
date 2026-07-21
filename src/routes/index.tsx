@@ -239,12 +239,19 @@ function Dashboard() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">Daily Trouble Trend (14d)</CardTitle></CardHeader>
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base">Trouble Trend</CardTitle>
+              <div className="flex gap-1 text-xs">
+                {(["daily","weekly","monthly"] as const).map((p) => (
+                  <button key={p} onClick={() => setTrendPeriod(p)} className={"px-2 py-1 rounded border " + (trendPeriod === p ? "bg-primary text-primary-foreground border-primary" : "bg-background")}>{p}</button>
+                ))}
+              </div>
+            </CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyTrend}>
+                <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" fontSize={11} />
+                  <XAxis dataKey="label" fontSize={11} />
                   <YAxis fontSize={11} allowDecimals={false} />
                   <Tooltip />
                   <Line type="monotone" dataKey="count" stroke={cssColors[1]} strokeWidth={2} dot={{ r: 3 }} />
