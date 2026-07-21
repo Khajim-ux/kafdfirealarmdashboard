@@ -15,8 +15,9 @@ import {
   RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
+import { SearchableSelect } from "@/components/searchable-select";
 import { exportToExcel, exportToPdf } from "@/lib/exports";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
 
