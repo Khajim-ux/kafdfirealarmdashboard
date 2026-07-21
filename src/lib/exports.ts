@@ -19,7 +19,7 @@ export function exportToExcel(rows: Trouble[], filename = "troubles.xlsx") {
     "Device Type": r.device_type ?? "",
     "Alarm Type": r.alarm_type,
     Status: r.status,
-    Technician: r.technician ?? "",
+    Operator: r.technician ?? "",
     Tenant: r.tenant ?? "",
     Description: r.description ?? "",
     "Event At": r.event_at,
