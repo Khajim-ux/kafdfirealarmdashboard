@@ -333,13 +333,14 @@ function Dashboard() {
   );
 }
 
-function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "warning"|"info"|"destructive"|"muted"|"success" }) {
+function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "warning"|"info"|"destructive"|"muted"|"success"|"monitor" }) {
   const toneMap: Record<string, string> = {
     warning: "bg-warning/15 text-warning-foreground border-warning/30",
     info: "bg-info/15 text-info border-info/30",
     destructive: "bg-destructive/15 text-destructive border-destructive/30",
     muted: "bg-muted text-muted-foreground border-border",
     success: "bg-success/15 text-success border-success/30",
+    monitor: "bg-chart-5/15 text-chart-5 border-chart-5/30",
   };
   return (
     <Card className="overflow-hidden">
