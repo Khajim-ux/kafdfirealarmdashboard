@@ -356,9 +356,10 @@ function Dashboard() {
                       <TableHead>Device</TableHead>
                       <TableHead>Parcel</TableHead>
                       <TableHead>Floor</TableHead>
+                      <TableHead>Device/Event</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Technician</TableHead>
+                      <TableHead>Operator</TableHead>
                       <TableHead>Tenant</TableHead>
                       <TableHead>Event</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
