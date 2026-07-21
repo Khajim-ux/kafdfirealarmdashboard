@@ -62,8 +62,8 @@ export function TroubleFormDialog({
   }
 
   async function save() {
-    if (!form.device_id?.trim() || !form.parcel) {
-      toast.error("Device ID and Parcel are required"); return;
+    if (!form.device_id?.trim() || !form.parcel || !form.device_type) {
+      toast.error("Device ID, Parcel and Device/Event Type are required"); return;
     }
     setBusy(true);
     const payload = {
