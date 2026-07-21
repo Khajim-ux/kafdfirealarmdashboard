@@ -1,0 +1,1 @@
+ALTER TYPE public.alarm_type ADD VALUE 'monitor_alert';
