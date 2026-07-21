@@ -367,13 +367,14 @@ function Dashboard() {
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
                     )}
                     {filtered.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell><div className="font-medium">{r.device_id}</div><div className="text-xs text-muted-foreground">{r.location ?? r.panel ?? ""}</div></TableCell>
                         <TableCell>{r.parcel}</TableCell>
                         <TableCell>{r.floor ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.device_type ?? "—"}</TableCell>
                         <TableCell><TypeBadge type={r.alarm_type} /></TableCell>
                         <TableCell><Badge variant={r.status === "open" ? "destructive" : "secondary"}>{r.status}</Badge></TableCell>
                         <TableCell>{r.technician ?? "—"}</TableCell>
