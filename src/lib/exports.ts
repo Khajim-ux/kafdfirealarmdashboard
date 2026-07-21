@@ -39,9 +39,9 @@ export function exportToPdf(rows: Trouble[], filename = "troubles.pdf") {
   doc.text(`Generated ${format(new Date(), "yyyy-MM-dd HH:mm")}   Records: ${rows.length}`, 14, 20);
   autoTable(doc, {
     startY: 24,
-    head: [["Device ID", "Parcel", "Floor", "Type", "Status", "Technician", "Tenant", "Event"]],
+    head: [["Device ID", "Parcel", "Floor", "Device/Event", "Type", "Status", "Operator", "Tenant", "Event"]],
     body: rows.map((r) => [
-      r.device_id, r.parcel, r.floor ?? "", r.alarm_type, r.status,
+      r.device_id, r.parcel, r.floor ?? "", r.device_type ?? "", r.alarm_type, r.status,
       r.technician ?? "", r.tenant ?? "",
       format(new Date(r.event_at), "yyyy-MM-dd HH:mm"),
     ]),
