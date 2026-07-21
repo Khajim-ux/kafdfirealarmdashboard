@@ -287,6 +287,37 @@ function Dashboard() {
           </Card>
         </div>
 
+        {/* Analytics summary */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <KpiCard label="Total Alarms" value={analytics.totalAlarms} icon={<FlameIcon className="h-5 w-5" />} tone="destructive" />
+          <KpiCard label="Total Troubles" value={analytics.totalTroubles} icon={<AlertTriangle className="h-5 w-5" />} tone="warning" />
+          <KpiCard label="Total Supervisory" value={analytics.totalSupervisory} icon={<ShieldAlert className="h-5 w-5" />} tone="info" />
+          <KpiCard label="Total Monitor Events" value={analytics.totalMonitor} icon={<Activity className="h-5 w-5" />} tone="monitor" />
+          <KpiCard label="Device Types Used" value={analytics.totalDeviceTypes} icon={<ClipboardList className="h-5 w-5" />} tone="muted" />
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Most Frequent Device/Event</div>
+              <div className="text-sm font-semibold mt-1 truncate" title={analytics.mostFrequent}>{analytics.mostFrequent}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Device/Event Types */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Top Device/Event Types</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={deviceTypeCounts.slice(0, 12)} layout="vertical" margin={{ left: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" fontSize={11} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" fontSize={11} width={140} />
+                <Tooltip />
+                <Bar dataKey="count" fill={cssColors[2]} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         {/* Tabs: Table + Audit */}
         <Tabs defaultValue="records">
           <TabsList>
