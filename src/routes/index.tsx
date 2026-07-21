@@ -361,6 +361,7 @@ function TypeBadge({ type }: { type: string }) {
     supervisory: { label: "Supervisory", className: "bg-info/20 text-info border-info/40" },
     fire_alarm: { label: "Fire", className: "bg-destructive/20 text-destructive border-destructive/40" },
     disabled: { label: "Disabled", className: "bg-muted text-muted-foreground border-border" },
+    monitor_alert: { label: "Monitor Alert", className: "bg-chart-5/20 text-chart-5 border-chart-5/40" },
   };
   const m = map[type] ?? { label: type, className: "" };
   return <Badge variant="outline" className={m.className}>{m.label}</Badge>;
