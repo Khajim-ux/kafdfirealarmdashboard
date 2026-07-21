@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -7,13 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { Flame } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
-  head: () => ({ meta: [{ title: "Sign in — Fire Alarm Dashboard" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in — Fire Alarm Dashboard" },
+      { name: "description", content: "Sign in or create an account to access the Fire Alarm Management Dashboard." },
+      { property: "og:title", content: "Sign in — Fire Alarm Dashboard" },
+      { property: "og:description", content: "Sign in or create an account to access the Fire Alarm Management Dashboard." },
+    ],
+  }),
 });
 
 function AuthPage() {
@@ -22,6 +32,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && session) navigate({ to: "/", replace: true });
@@ -32,20 +45,59 @@ function AuthPage() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) toast.error(error.message);
-    else { toast.success("Welcome back"); navigate({ to: "/", replace: true }); }
+    if (error) {
+      if (error.message.toLowerCase().includes("confirm")) {
+        toast.error("Please verify your email first. Check your inbox for the confirmation link.");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+    toast.success("Welcome back");
+    navigate({ to: "/", replace: true });
   }
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email, password,
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
       options: { emailRedirectTo: window.location.origin },
     });
     setBusy(false);
+    if (error) return toast.error(error.message);
+    if (data.session) {
+      toast.success("Account created");
+      navigate({ to: "/", replace: true });
+    } else {
+      toast.success("Check your email to verify your account before signing in.");
+    }
+  }
+
+  async function resendVerification() {
+    if (!email) return toast.error("Enter your email above first");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
     if (error) toast.error(error.message);
-    else toast.success("Account created. You can now sign in.");
+    else toast.success("Verification email sent");
+  }
+
+  async function sendReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("If that email exists, a reset link is on its way.");
+    setForgotOpen(false);
+    setForgotEmail("");
   }
 
   async function google() {
@@ -72,15 +124,36 @@ function AuthPage() {
             <TabsContent value="signin">
               <form onSubmit={signIn} className="space-y-4 mt-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                <div className="space-y-2"><Label>Password</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Password</Label>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotEmail(email); setForgotOpen(true); }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
                 <Button type="submit" className="w-full" disabled={busy}>Sign in</Button>
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  className="block w-full text-center text-xs text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  Didn't get the verification email? Resend
+                </button>
               </form>
             </TabsContent>
             <TabsContent value="signup">
               <form onSubmit={signUp} className="space-y-4 mt-4">
                 <div className="space-y-2"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
                 <div className="space-y-2"><Label>Password</Label><Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-                <p className="text-xs text-muted-foreground">First signup becomes Admin. Others default to Viewer.</p>
+                <p className="text-xs text-muted-foreground">
+                  We'll email you a link to verify your account. First signup becomes Admin; others default to Viewer.
+                </p>
                 <Button type="submit" className="w-full" disabled={busy}>Create account</Button>
               </form>
             </TabsContent>
@@ -89,6 +162,30 @@ function AuthPage() {
           <Button variant="outline" className="w-full" onClick={google}>Continue with Google</Button>
         </CardContent>
       </Card>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset your password</DialogTitle>
+            <DialogDescription>
+              Enter the email tied to your account and we'll send a secure reset link.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={sendReset} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setForgotOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={forgotBusy}>Send reset link</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ensure the reset-password route is referenced for type-safety */}
+      <Link to="/reset-password" className="hidden" aria-hidden />
     </div>
   );
 }
