@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
-  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon,
+  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -98,6 +98,7 @@ function Dashboard() {
       supervisory: rows.filter((r) => r.alarm_type === "supervisory" && isOpen(r)).length,
       fire: rows.filter((r) => r.alarm_type === "fire_alarm" && isOpen(r)).length,
       disabled: rows.filter((r) => r.alarm_type === "disabled" && isOpen(r)).length,
+      monitor: rows.filter((r) => r.alarm_type === "monitor_alert" && isOpen(r)).length,
       closed: rows.filter((r) => r.status === "closed").length,
       open: rows.filter(isOpen).length,
     };
@@ -170,11 +171,12 @@ function Dashboard() {
 
       <main className="max-w-[1600px] mx-auto p-4 space-y-4">
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiCard label="Active Troubles" value={kpis.troubles} icon={<AlertTriangle className="h-5 w-5" />} tone="warning" />
           <KpiCard label="Supervisory" value={kpis.supervisory} icon={<ShieldAlert className="h-5 w-5" />} tone="info" />
           <KpiCard label="Fire Alarms" value={kpis.fire} icon={<FlameIcon className="h-5 w-5" />} tone="destructive" />
           <KpiCard label="Disabled Devices" value={kpis.disabled} icon={<PowerOff className="h-5 w-5" />} tone="muted" />
+          <KpiCard label="Monitor Alerts" value={kpis.monitor} icon={<Activity className="h-5 w-5" />} tone="monitor" />
           <KpiCard label="Closed Tickets" value={kpis.closed} icon={<CheckCircle2 className="h-5 w-5" />} tone="success" />
         </div>
 
@@ -331,13 +333,14 @@ function Dashboard() {
   );
 }
 
-function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "warning"|"info"|"destructive"|"muted"|"success" }) {
+function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "warning"|"info"|"destructive"|"muted"|"success"|"monitor" }) {
   const toneMap: Record<string, string> = {
     warning: "bg-warning/15 text-warning-foreground border-warning/30",
     info: "bg-info/15 text-info border-info/30",
     destructive: "bg-destructive/15 text-destructive border-destructive/30",
     muted: "bg-muted text-muted-foreground border-border",
     success: "bg-success/15 text-success border-success/30",
+    monitor: "bg-chart-5/15 text-chart-5 border-chart-5/30",
   };
   return (
     <Card className="overflow-hidden">
@@ -358,6 +361,7 @@ function TypeBadge({ type }: { type: string }) {
     supervisory: { label: "Supervisory", className: "bg-info/20 text-info border-info/40" },
     fire_alarm: { label: "Fire", className: "bg-destructive/20 text-destructive border-destructive/40" },
     disabled: { label: "Disabled", className: "bg-muted text-muted-foreground border-border" },
+    monitor_alert: { label: "Monitor Alert", className: "bg-chart-5/20 text-chart-5 border-chart-5/40" },
   };
   const m = map[type] ?? { label: type, className: "" };
   return <Badge variant="outline" className={m.className}>{m.label}</Badge>;

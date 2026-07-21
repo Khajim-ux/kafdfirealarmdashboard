@@ -152,7 +152,12 @@ export type Database = {
       }
     }
     Enums: {
-      alarm_type: "trouble" | "supervisory" | "fire_alarm" | "disabled"
+      alarm_type:
+        | "trouble"
+        | "supervisory"
+        | "fire_alarm"
+        | "disabled"
+        | "monitor_alert"
       app_role: "admin" | "operator" | "viewer"
       ticket_status: "open" | "closed"
     }
@@ -282,7 +287,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      alarm_type: ["trouble", "supervisory", "fire_alarm", "disabled"],
+      alarm_type: [
+        "trouble",
+        "supervisory",
+        "fire_alarm",
+        "disabled",
+        "monitor_alert",
+      ],
       app_role: ["admin", "operator", "viewer"],
       ticket_status: ["open", "closed"],
     },
