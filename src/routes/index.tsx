@@ -15,8 +15,9 @@ import {
   RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
+import { SearchableSelect } from "@/components/searchable-select";
 import { exportToExcel, exportToPdf } from "@/lib/exports";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
 
@@ -108,19 +109,41 @@ function Dashboard() {
     PARCELS.map((p) => ({ parcel: p, count: rows.filter((r) => r.parcel === p && r.alarm_type === "trouble").length })),
   [rows]);
 
-  const dailyTrend = useMemo(() => {
+  const [trendPeriod, setTrendPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
+
+  const trendData = useMemo(() => {
     const map = new Map<string, number>();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(); d.setDate(d.getDate() - i);
-      map.set(format(d, "MM-dd"), 0);
+    const now = new Date();
+    if (trendPeriod === "daily") {
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate() - i);
+        map.set(format(d, "MM-dd"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(new Date(r.event_at), "MM-dd");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
+    } else if (trendPeriod === "weekly") {
+      for (let i = 11; i >= 0; i--) {
+        const d = startOfWeek(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7));
+        map.set(format(d, "MM-dd"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(startOfWeek(new Date(r.event_at)), "MM-dd");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
+    } else {
+      for (let i = 11; i >= 0; i--) {
+        const d = startOfMonth(new Date(now.getFullYear(), now.getMonth() - i, 1));
+        map.set(format(d, "yyyy-MM"), 0);
+      }
+      rows.forEach((r) => {
+        const k = format(startOfMonth(new Date(r.event_at)), "yyyy-MM");
+        if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
+      });
     }
-    rows.forEach((r) => {
-      if (r.alarm_type !== "trouble") return;
-      const k = format(new Date(r.event_at), "MM-dd");
-      if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
-    });
-    return Array.from(map, ([day, count]) => ({ day, count }));
-  }, [rows]);
+    return Array.from(map, ([label, count]) => ({ label, count }));
+  }, [rows, trendPeriod]);
 
   const openClosed = [
     { name: "Open", value: kpis.open },
@@ -131,6 +154,25 @@ function Dashboard() {
     name: t.label,
     value: rows.filter((r) => r.alarm_type === t.value).length,
   }));
+
+  const deviceTypeCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r) => {
+      if (!r.device_type) return;
+      m.set(r.device_type, (m.get(r.device_type) ?? 0) + 1);
+    });
+    return Array.from(m, ([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [rows]);
+
+  const analytics = useMemo(() => {
+    const totalAlarms = rows.filter((r) => r.alarm_type === "fire_alarm").length;
+    const totalTroubles = rows.filter((r) => r.alarm_type === "trouble").length;
+    const totalSupervisory = rows.filter((r) => r.alarm_type === "supervisory").length;
+    const totalMonitor = rows.filter((r) => r.alarm_type === "monitor_alert").length;
+    const totalDeviceTypes = deviceTypeCounts.length;
+    const mostFrequent = deviceTypeCounts[0]?.name ?? "—";
+    return { totalAlarms, totalTroubles, totalSupervisory, totalMonitor, totalDeviceTypes, mostFrequent };
+  }, [rows, deviceTypeCounts]);
 
   const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
   const cssColors = ["#dc2626", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"];
@@ -197,12 +239,19 @@ function Dashboard() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">Daily Trouble Trend (14d)</CardTitle></CardHeader>
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base">Trouble Trend</CardTitle>
+              <div className="flex gap-1 text-xs">
+                {(["daily","weekly","monthly"] as const).map((p) => (
+                  <button key={p} onClick={() => setTrendPeriod(p)} className={"px-2 py-1 rounded border " + (trendPeriod === p ? "bg-primary text-primary-foreground border-primary" : "bg-background")}>{p}</button>
+                ))}
+              </div>
+            </CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyTrend}>
+                <LineChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="day" fontSize={11} />
+                  <XAxis dataKey="label" fontSize={11} />
                   <YAxis fontSize={11} allowDecimals={false} />
                   <Tooltip />
                   <Line type="monotone" dataKey="count" stroke={cssColors[1]} strokeWidth={2} dot={{ r: 3 }} />
@@ -238,6 +287,37 @@ function Dashboard() {
           </Card>
         </div>
 
+        {/* Analytics summary */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <KpiCard label="Total Alarms" value={analytics.totalAlarms} icon={<FlameIcon className="h-5 w-5" />} tone="destructive" />
+          <KpiCard label="Total Troubles" value={analytics.totalTroubles} icon={<AlertTriangle className="h-5 w-5" />} tone="warning" />
+          <KpiCard label="Total Supervisory" value={analytics.totalSupervisory} icon={<ShieldAlert className="h-5 w-5" />} tone="info" />
+          <KpiCard label="Total Monitor Events" value={analytics.totalMonitor} icon={<Activity className="h-5 w-5" />} tone="monitor" />
+          <KpiCard label="Device Types Used" value={analytics.totalDeviceTypes} icon={<ClipboardList className="h-5 w-5" />} tone="muted" />
+          <Card className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="text-xs text-muted-foreground">Most Frequent Device/Event</div>
+              <div className="text-sm font-semibold mt-1 truncate" title={analytics.mostFrequent}>{analytics.mostFrequent}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Top Device/Event Types */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Top Device/Event Types</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={deviceTypeCounts.slice(0, 12)} layout="vertical" margin={{ left: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis type="number" fontSize={11} allowDecimals={false} />
+                <YAxis type="category" dataKey="name" fontSize={11} width={140} />
+                <Tooltip />
+                <Bar dataKey="count" fill={cssColors[2]} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         {/* Tabs: Table + Audit */}
         <Tabs defaultValue="records">
           <TabsList>
@@ -255,8 +335,15 @@ function Dashboard() {
               <Input placeholder="Floor" value={fFloor} onChange={(e) => setFFloor(e.target.value)} />
               <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
               <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
-              <Select value={fDeviceType} onValueChange={setFDeviceType}><SelectTrigger><SelectValue placeholder="Device" /></SelectTrigger><SelectContent><SelectItem value="all">All devices</SelectItem>{DEVICE_TYPES.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              <Input placeholder="Technician" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <SearchableSelect
+                value={fDeviceType}
+                onChange={setFDeviceType}
+                options={DEVICE_TYPES as unknown as string[]}
+                allOption={{ value: "all", label: "All device/events" }}
+                placeholder="Device/Event"
+                searchPlaceholder="Search device/event…"
+              />
+              <Input placeholder="Operator" value={fTech} onChange={(e) => setFTech(e.target.value)} />
               <Input placeholder="Tenant" value={fTenant} onChange={(e) => setFTenant(e.target.value)} />
               <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
             </CardContent></Card>
@@ -269,9 +356,10 @@ function Dashboard() {
                       <TableHead>Device</TableHead>
                       <TableHead>Parcel</TableHead>
                       <TableHead>Floor</TableHead>
+                      <TableHead>Device/Event</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Technician</TableHead>
+                      <TableHead>Operator</TableHead>
                       <TableHead>Tenant</TableHead>
                       <TableHead>Event</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -279,13 +367,14 @@ function Dashboard() {
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
                     )}
                     {filtered.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell><div className="font-medium">{r.device_id}</div><div className="text-xs text-muted-foreground">{r.location ?? r.panel ?? ""}</div></TableCell>
                         <TableCell>{r.parcel}</TableCell>
                         <TableCell>{r.floor ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.device_type ?? "—"}</TableCell>
                         <TableCell><TypeBadge type={r.alarm_type} /></TableCell>
                         <TableCell><Badge variant={r.status === "open" ? "destructive" : "secondary"}>{r.status}</Badge></TableCell>
                         <TableCell>{r.technician ?? "—"}</TableCell>
