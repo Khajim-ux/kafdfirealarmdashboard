@@ -171,11 +171,12 @@ function Dashboard() {
 
       <main className="max-w-[1600px] mx-auto p-4 space-y-4">
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiCard label="Active Troubles" value={kpis.troubles} icon={<AlertTriangle className="h-5 w-5" />} tone="warning" />
           <KpiCard label="Supervisory" value={kpis.supervisory} icon={<ShieldAlert className="h-5 w-5" />} tone="info" />
           <KpiCard label="Fire Alarms" value={kpis.fire} icon={<FlameIcon className="h-5 w-5" />} tone="destructive" />
           <KpiCard label="Disabled Devices" value={kpis.disabled} icon={<PowerOff className="h-5 w-5" />} tone="muted" />
+          <KpiCard label="Monitor Alerts" value={kpis.monitor} icon={<Activity className="h-5 w-5" />} tone="monitor" />
           <KpiCard label="Closed Tickets" value={kpis.closed} icon={<CheckCircle2 className="h-5 w-5" />} tone="success" />
         </div>
 
