@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { SearchableSelect } from "@/components/searchable-select";
 import { exportToExcel, exportToPdf } from "@/lib/exports";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
@@ -203,6 +204,7 @@ function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationsBell />
             <Button variant="outline" size="sm" onClick={load}><RefreshCw className={"h-4 w-4 " + (fetching ? "animate-spin" : "")} /></Button>
             <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" />PDF</Button>
