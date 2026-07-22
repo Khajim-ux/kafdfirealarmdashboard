@@ -158,7 +158,13 @@ export type Database = {
         | "fire_alarm"
         | "disabled"
         | "monitor_alert"
-      app_role: "admin" | "operator" | "viewer"
+      app_role:
+        | "admin"
+        | "operator"
+        | "viewer"
+        | "supervisor"
+        | "engineer"
+        | "manager"
       ticket_status: "open" | "closed"
     }
     CompositeTypes: {
@@ -294,7 +300,14 @@ export const Constants = {
         "disabled",
         "monitor_alert",
       ],
-      app_role: ["admin", "operator", "viewer"],
+      app_role: [
+        "admin",
+        "operator",
+        "viewer",
+        "supervisor",
+        "engineer",
+        "manager",
+      ],
       ticket_status: ["open", "closed"],
     },
   },

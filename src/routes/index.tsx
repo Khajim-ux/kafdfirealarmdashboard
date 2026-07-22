@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, type Trouble } from "@/lib/constants";
+import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, canEditTicket, canDeleteTicket, canManageUsers, type Trouble } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,8 +183,9 @@ function Dashboard() {
     if (error) toast.error(error.message); else toast.success("Deleted");
   }
 
-  const canWrite = role === "admin" || role === "operator";
-  const canDelete = role === "admin";
+  const canWrite = canEditTicket(role);
+  const canDelete = canDeleteTicket(role);
+  const canUsers = canManageUsers(role);
 
   if (loading || !user) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
@@ -206,6 +207,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" />PDF</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" />New</Button>}
+            {canUsers && <Button variant="outline" size="sm" onClick={() => navigate({ to: "/users" })}>Users</Button>}
             <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>

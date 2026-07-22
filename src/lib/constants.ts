@@ -72,7 +72,29 @@ export const DEVICE_TYPES = [
 
 export type AlarmType = "trouble" | "supervisory" | "fire_alarm" | "disabled" | "monitor_alert";
 export type TicketStatus = "open" | "closed";
-export type AppRole = "admin" | "operator" | "viewer";
+export type AppRole = "admin" | "manager" | "engineer" | "supervisor" | "operator" | "viewer";
+
+export const ASSIGNABLE_ROLES: AppRole[] = ["admin", "manager", "engineer", "supervisor", "operator", "viewer"];
+
+// Permission helpers — mirror backend RLS policies.
+export function canViewTicket(role: AppRole | null) {
+  return !!role;
+}
+export function canOpenTicket(role: AppRole | null) {
+  return role !== null && role !== "viewer";
+}
+export function canEditTicket(role: AppRole | null) {
+  return role !== null && role !== "viewer";
+}
+export function canCloseTicket(role: AppRole | null) {
+  return role !== null && role !== "viewer";
+}
+export function canDeleteTicket(role: AppRole | null) {
+  return role === "admin";
+}
+export function canManageUsers(role: AppRole | null) {
+  return role === "admin";
+}
 
 export interface Trouble {
   id: string;
