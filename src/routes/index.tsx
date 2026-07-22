@@ -207,6 +207,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" />PDF</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" />New</Button>}
+            {canUsers && <Button variant="outline" size="sm" onClick={() => navigate({ to: "/users" })}>Users</Button>}
             <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
           </div>
         </div>
