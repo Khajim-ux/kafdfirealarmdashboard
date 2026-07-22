@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS audit_insert_admin ON public.audit_log; REVOKE INSERT ON public.audit_log FROM authenticated, anon;
