@@ -183,8 +183,9 @@ function Dashboard() {
     if (error) toast.error(error.message); else toast.success("Deleted");
   }
 
-  const canWrite = role === "admin" || role === "operator";
-  const canDelete = role === "admin";
+  const canWrite = canEditTicket(role);
+  const canDelete = canDeleteTicket(role);
+  const canUsers = canManageUsers(role);
 
   if (loading || !user) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
