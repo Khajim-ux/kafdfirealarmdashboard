@@ -41,14 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .order("role", { ascending: true });
+      .eq("user_id", userId);
     if (data && data.length > 0) {
-      // pick highest privilege
       const roles = data.map((r) => r.role as AppRole);
-      if (roles.includes("admin")) setRole("admin");
-      else if (roles.includes("operator")) setRole("operator");
-      else setRole("viewer");
+      const priority: AppRole[] = ["admin", "manager", "engineer", "supervisor", "operator", "viewer"];
+      const picked = priority.find((p) => roles.includes(p)) ?? "viewer";
+      setRole(picked);
     } else {
       setRole("viewer");
     }
