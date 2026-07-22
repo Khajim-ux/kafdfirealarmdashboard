@@ -52,6 +52,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Real-time fire alarm monitoring, troubles tracking, and device management." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Fire Alarm Management Dashboard" },
+      { name: "twitter:description", content: "Real-time fire alarm monitoring, troubles tracking, and device management." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/60e6dcac-32e1-4883-a79e-25caf66092c3" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/60e6dcac-32e1-4883-a79e-25caf66092c3" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
