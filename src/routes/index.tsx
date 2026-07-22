@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, type Trouble } from "@/lib/constants";
+import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, canEditTicket, canDeleteTicket, canManageUsers, type Trouble } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
