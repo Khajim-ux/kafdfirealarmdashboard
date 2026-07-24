@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Flame } from "lucide-react";
+import { Bell } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -110,7 +110,7 @@ function AuthPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-            <Flame className="h-6 w-6" />
+            <Bell className="h-6 w-6" />
           </div>
           <CardTitle className="text-2xl">Fire Alarm Dashboard</CardTitle>
           <CardDescription>Monitor & manage fire safety systems</CardDescription>
