@@ -217,18 +217,20 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <NotificationsBell />
-            <Button variant="outline" size="sm" onClick={load}><RefreshCw className={"h-4 w-4 " + (fetching ? "animate-spin" : "")} /></Button>
-            <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
-            <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" />PDF</Button>
-            {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" />New</Button>}
+            <Button variant="outline" size="sm" aria-label="Refresh records" onClick={load}><RefreshCw className={"h-4 w-4 " + (fetching ? "animate-spin" : "")} aria-hidden /></Button>
+            <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" aria-hidden />Excel</Button>
+            <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
+            {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
             {canUsers && <Button variant="outline" size="sm" onClick={() => navigate({ to: "/users" })}>Users</Button>}
-            <Button variant="ghost" size="sm" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm" aria-label="Sign out" onClick={signOut}><LogOut className="h-4 w-4" aria-hidden /></Button>
           </div>
         </div>
       </header>
 
       <main className="max-w-[1600px] mx-auto p-4 space-y-4">
         {/* KPIs */}
+        <section aria-labelledby="kpi-heading">
+        <h2 id="kpi-heading" className="sr-only">Key performance indicators</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiCard label="Active Troubles" value={kpis.troubles} icon={<AlertTriangle className="h-5 w-5" />} tone="warning" />
           <KpiCard label="Supervisory" value={kpis.supervisory} icon={<ShieldAlert className="h-5 w-5" />} tone="info" />
@@ -237,6 +239,7 @@ function Dashboard() {
           <KpiCard label="Monitor Alerts" value={kpis.monitor} icon={<Activity className="h-5 w-5" />} tone="monitor" />
           <KpiCard label="Closed Tickets" value={kpis.closed} icon={<CheckCircle2 className="h-5 w-5" />} tone="success" />
         </div>
+        </section>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
