@@ -17,7 +17,12 @@ export const Route = createFileRoute("/users")({
   head: () => ({
     meta: [
       { title: "Manage Users · Fire Alarm Dashboard" },
-      { name: "description", content: "Admin-only view for assigning roles to team members." },
+      { name: "description", content: "Admin-only view for assigning roles and managing team member access to the Fire Alarm Dashboard." },
+      { property: "og:title", content: "User & Role Management — Fire Alarm Dashboard" },
+      { property: "og:description", content: "Assign roles, promote operators, and control who can manage fire alarm records." },
+      { name: "twitter:title", content: "User & Role Management — Fire Alarm Dashboard" },
+      { name: "twitter:description", content: "Assign roles, promote operators, and control who can manage fire alarm records." },
+      { name: "robots", content: "noindex" },
     ],
   }),
 });
@@ -117,8 +122,8 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{format(new Date(r.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => removeRole(r)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Button size="icon" variant="ghost" aria-label="Remove role assignment" onClick={() => removeRole(r)}>
+                        <Trash2 className="h-4 w-4 text-destructive" aria-hidden />
                       </Button>
                     </TableCell>
                   </TableRow>

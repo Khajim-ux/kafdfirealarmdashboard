@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kafdfirealarmdashboard.lovable.app/sitemap.xml
