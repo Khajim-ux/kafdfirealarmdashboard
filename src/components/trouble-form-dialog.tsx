@@ -35,6 +35,7 @@ export function TroubleFormDialog({
     if (open) {
       setForm(initial ?? {
         device_id: "", parcel: PARCELS[0], alarm_type: "trouble", status: "open",
+        event_type: "Trouble", active_status: "Active", photo_status: "No Photo", priority: "Medium",
       });
       setQrPreview(null);
     }
@@ -57,13 +58,25 @@ export function TroubleFormDialog({
     if (error) { toast.error(error.message); setUploading(false); return; }
     const { data } = await supabase.storage.from("trouble-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
     upd("photo_url", data?.signedUrl ?? path);
+    setForm((f) => ({ ...f, photo_status: f.photo_status && f.photo_status !== "No Photo" ? f.photo_status : "Uploaded" }));
     setUploading(false);
     toast.success("Photo uploaded");
   }
 
+  async function handleAttachment(file: File) {
+    setUploading(true);
+    const path = `${user?.id ?? "anon"}/attach-${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
+    const { error } = await supabase.storage.from("trouble-photos").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); setUploading(false); return; }
+    const { data } = await supabase.storage.from("trouble-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+    upd("attachment_url", data?.signedUrl ?? path);
+    setUploading(false);
+    toast.success("Attachment uploaded");
+  }
+
   async function save() {
     if (!form.device_id?.trim() || !form.parcel || !form.device_type) {
-      toast.error("Device ID, Parcel and Device/Event Type are required"); return;
+      toast.error("Device ID, Tower and Device/Event Type are required"); return;
     }
     setBusy(true);
     const payload = {
@@ -83,6 +96,18 @@ export function TroubleFormDialog({
       event_at: form.event_at || new Date().toISOString(),
       closed_at: form.status === "closed" ? (form.closed_at || new Date().toISOString()) : null,
       updated_by: user?.id ?? null,
+      loop: form.loop || null,
+      zone: form.zone || null,
+      device_number: form.device_number || null,
+      event_type: form.event_type || null,
+      fault_name: form.fault_name || null,
+      priority: form.priority || null,
+      active_status: form.active_status || "Active",
+      cause: form.cause || null,
+      action_taken: form.action_taken || null,
+      remarks: form.remarks || null,
+      attachment_url: form.attachment_url || null,
+      photo_status: form.photo_status || "No Photo",
     };
     let error;
     if (initial?.id) {
@@ -92,8 +117,9 @@ export function TroubleFormDialog({
     }
     setBusy(false);
     if (error) toast.error(error.message);
-    else { toast.success(initial ? "Trouble updated" : "Trouble created"); onSaved(); onOpenChange(false); }
+    else { toast.success(initial ? "Record updated" : "Record created"); onSaved(); onOpenChange(false); }
   }
+
 
   return (
     <>
