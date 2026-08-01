@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, type Trouble } from "@/lib/constants";
+import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, PHOTO_STATUSES, PRIORITIES, ACTIVE_STATUSES, type Trouble } from "@/lib/constants";
 import { generateQrDataUrl } from "@/lib/exports";
 import { toast } from "sonner";
 import { QrCode, Camera, ScanLine } from "lucide-react";
