@@ -2,7 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, canEditTicket, canDeleteTicket, canManageUsers, type Trouble } from "@/lib/constants";
+import {
+  PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, ACTIVE_STATUSES,
+  canEditTicket, canDeleteTicket, canManageUsers, formatUser,
+  type Trouble, type Profile,
+} from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +16,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
-  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, Flame as FlameIcon, Activity,
+  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList,
+  Flame as FlameIcon, Activity, Camera, ImageOff, Table2, Paperclip, UserCog,
+  Bell, Wrench, RotateCcw, Wind, Droplets,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { SearchableSelect } from "@/components/searchable-select";
-import { exportToExcel, exportToPdf } from "@/lib/exports";
+import { exportToExcel, exportToPdf, exportToCsv } from "@/lib/exports";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
 
 export const Route = createFileRoute("/")({
@@ -27,11 +33,13 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Live Dashboard — Fire Alarm Management" },
-      { name: "description", content: "Live KPIs, real-time troubles, alarm trends, and device analytics for your fire alarm system." },
+      { name: "description", content: "Live KPIs, real-time records, alarm trends, and device analytics for your fire alarm system." },
       { property: "og:title", content: "Live Dashboard — Fire Alarm Management" },
-      { property: "og:description", content: "Track active troubles, fire alarms, supervisory events, and device analytics in real time." },
+      { property: "og:description", content: "Track active events, fire alarms, supervisory records, and device analytics in real time." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Live Dashboard — Fire Alarm Management" },
-      { name: "twitter:description", content: "Track active troubles, fire alarms, supervisory events, and device analytics in real time." },
+      { name: "twitter:description", content: "Track active events, fire alarms, supervisory records, and device analytics in real time." },
       { property: "og:url", content: "https://kafdfirealarmdashboard.lovable.app/" },
     ],
     links: [{ rel: "canonical", href: "https://kafdfirealarmdashboard.lovable.app/" }],
@@ -50,16 +58,23 @@ function Dashboard() {
 
   const [rows, setRows] = useState<Trouble[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const [fetching, setFetching] = useState(true);
   const [search, setSearch] = useState("");
   const [fParcel, setFParcel] = useState<string>("all");
   const [fFloor, setFFloor] = useState<string>("");
   const [fStatus, setFStatus] = useState<string>("all");
+  const [fActive, setFActive] = useState<string>("all");
+  const [fEventType, setFEventType] = useState<string>("all");
   const [fType, setFType] = useState<string>("all");
   const [fDeviceType, setFDeviceType] = useState<string>("all");
   const [fTech, setFTech] = useState<string>("");
   const [fTenant, setFTenant] = useState<string>("");
-  const [fDate, setFDate] = useState<string>("");
+  const [fUserName, setFUserName] = useState<string>("");
+  const [fUserId, setFUserId] = useState<string>("");
+  const [fFrom, setFFrom] = useState<string>("");
+  const [fTo, setFTo] = useState<string>("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editRow, setEditRow] = useState<Trouble | null>(null);
@@ -68,9 +83,13 @@ function Dashboard() {
     setFetching(true);
     const { data, error } = await supabase.from("troubles").select("*").order("event_at", { ascending: false }).limit(1000);
     if (error) toast.error(error.message);
-    else setRows((data ?? []) as Trouble[]);
+    else setRows((data ?? []) as unknown as Trouble[]);
     const { data: a } = await supabase.from("audit_log").select("id, action, actor, created_at, record_id").order("created_at", { ascending: false }).limit(50);
     setAudit((a ?? []) as AuditRow[]);
+    const { data: p } = await supabase.from("profiles").select("user_id, full_name, employee_id");
+    setProfiles(Object.fromEntries(((p ?? []) as Profile[]).map((x) => [x.user_id, x])));
+    const { data: ur } = await supabase.from("user_roles").select("user_id, role");
+    setUserRoles(Object.fromEntries(((ur ?? []) as { user_id: string; role: string }[]).map((x) => [x.user_id, x.role])));
     setFetching(false);
   }, []);
 
@@ -85,25 +104,44 @@ function Dashboard() {
     return () => { clearInterval(iv); supabase.removeChannel(ch); };
   }, [user, load]);
 
+  const userLabel = useCallback(
+    (id: string | null) => formatUser(id, profiles, userRoles),
+    [profiles, userRoles],
+  );
+
   const filtered = useMemo(() => rows.filter((r) => {
     if (fParcel !== "all" && r.parcel !== fParcel) return false;
     if (fFloor && (r.floor ?? "").toLowerCase() !== fFloor.toLowerCase()) return false;
     if (fStatus !== "all" && r.status !== fStatus) return false;
+    if (fActive !== "all" && (r.active_status ?? "Active") !== fActive) return false;
+    if (fEventType !== "all" && r.event_type !== fEventType) return false;
     if (fType !== "all" && r.alarm_type !== fType) return false;
     if (fDeviceType !== "all" && r.device_type !== fDeviceType) return false;
     if (fTech && !(r.technician ?? "").toLowerCase().includes(fTech.toLowerCase())) return false;
     if (fTenant && !(r.tenant ?? "").toLowerCase().includes(fTenant.toLowerCase())) return false;
-    if (fDate && !r.event_at.startsWith(fDate)) return false;
+    if (fUserName) {
+      const name = (profiles[r.created_by ?? ""]?.full_name ?? "").toLowerCase();
+      if (!name.includes(fUserName.toLowerCase())) return false;
+    }
+    if (fUserId) {
+      const emp = (profiles[r.created_by ?? ""]?.employee_id ?? r.created_by ?? "").toLowerCase();
+      if (!emp.includes(fUserId.toLowerCase())) return false;
+    }
+    const day = r.event_at.slice(0, 10);
+    if (fFrom && day < fFrom) return false;
+    if (fTo && day > fTo) return false;
     if (search) {
       const s = search.toLowerCase();
       if (!(
         r.device_id.toLowerCase().includes(s) ||
         (r.panel ?? "").toLowerCase().includes(s) ||
-        (r.location ?? "").toLowerCase().includes(s)
+        (r.location ?? "").toLowerCase().includes(s) ||
+        (r.fault_name ?? "").toLowerCase().includes(s) ||
+        (r.device_number ?? "").toLowerCase().includes(s)
       )) return false;
     }
     return true;
-  }), [rows, fParcel, fFloor, fStatus, fType, fDeviceType, fTech, fTenant, fDate, search]);
+  }), [rows, fParcel, fFloor, fStatus, fActive, fEventType, fType, fDeviceType, fTech, fTenant, fUserName, fUserId, fFrom, fTo, search, profiles]);
 
   const kpis = useMemo(() => {
     const isOpen = (r: Trouble) => r.status === "open";
@@ -118,8 +156,19 @@ function Dashboard() {
     };
   }, [rows]);
 
+  const eventCounters = useMemo(() => {
+    const count = (t: string) => rows.filter((r) => r.event_type === t).length;
+    return {
+      Fire: count("Fire"), Alarm: count("Alarm"), Warning: count("Warning"),
+      Fault: count("Fault"), Trouble: count("Trouble"), Supervisory: count("Supervisory"),
+      Monitor: count("Monitor"), Disablement: count("Disablement"),
+      "FM-200": count("FM-200"), CO2: count("CO2"), Restore: count("Restore"),
+      Active: rows.filter((r) => (r.active_status ?? "Active") === "Active").length,
+    };
+  }, [rows]);
+
   const byParcel = useMemo(() =>
-    PARCELS.map((p) => ({ parcel: p, count: rows.filter((r) => r.parcel === p && r.alarm_type === "trouble").length })),
+    PARCELS.map((p) => ({ parcel: p, count: rows.filter((r) => r.parcel === p).length })),
   [rows]);
 
   const [trendPeriod, setTrendPeriod] = useState<"daily"|"weekly"|"monthly">("daily");
@@ -163,10 +212,10 @@ function Dashboard() {
     { name: "Closed", value: kpis.closed },
   ];
 
-  const typeDistribution = ALARM_TYPES.map((t) => ({
-    name: t.label,
-    value: rows.filter((r) => r.alarm_type === t.value).length,
-  }));
+  const typeDistribution = useMemo(() =>
+    EVENT_TYPES.map((t) => ({ name: t, value: rows.filter((r) => r.event_type === t).length }))
+      .filter((d) => d.value > 0),
+  [rows]);
 
   const deviceTypeCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -177,21 +226,19 @@ function Dashboard() {
     return Array.from(m, ([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
   }, [rows]);
 
-  const analytics = useMemo(() => {
-    const totalAlarms = rows.filter((r) => r.alarm_type === "fire_alarm").length;
-    const totalTroubles = rows.filter((r) => r.alarm_type === "trouble").length;
-    const totalSupervisory = rows.filter((r) => r.alarm_type === "supervisory").length;
-    const totalMonitor = rows.filter((r) => r.alarm_type === "monitor_alert").length;
-    const totalDeviceTypes = deviceTypeCounts.length;
-    const mostFrequent = deviceTypeCounts[0]?.name ?? "—";
-    return { totalAlarms, totalTroubles, totalSupervisory, totalMonitor, totalDeviceTypes, mostFrequent };
-  }, [rows, deviceTypeCounts]);
+  const analytics = useMemo(() => ({
+    totalAlarms: rows.filter((r) => r.event_type === "Fire" || r.event_type === "Alarm").length,
+    totalTroubles: rows.filter((r) => r.event_type === "Trouble").length,
+    totalSupervisory: rows.filter((r) => r.event_type === "Supervisory").length,
+    totalMonitor: rows.filter((r) => r.event_type === "Monitor").length,
+    totalDeviceTypes: deviceTypeCounts.length,
+    mostFrequent: deviceTypeCounts[0]?.name ?? "—",
+  }), [rows, deviceTypeCounts]);
 
-  const chartColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
   const cssColors = ["#dc2626", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6"];
 
   async function del(id: string) {
-    if (!confirm("Delete this trouble permanently?")) return;
+    if (!confirm("Delete this record permanently?")) return;
     const { error } = await supabase.from("troubles").delete().eq("id", id);
     if (error) toast.error(error.message); else toast.success("Deleted");
   }
@@ -215,12 +262,14 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">{user.email} · <Badge variant="secondary" className="ml-1">{role ?? "viewer"}</Badge></p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <NotificationsBell />
             <Button variant="outline" size="sm" aria-label="Refresh records" onClick={load}><RefreshCw className={"h-4 w-4 " + (fetching ? "animate-spin" : "")} aria-hidden /></Button>
-            <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered)}><FileSpreadsheet className="h-4 w-4 mr-1" aria-hidden />Excel</Button>
-            <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
+            <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered, userLabel)}><FileSpreadsheet className="h-4 w-4 mr-1" aria-hidden />Excel</Button>
+            <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, userLabel)}><Table2 className="h-4 w-4 mr-1" aria-hidden />CSV</Button>
+            <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered, userLabel)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
+            <Button variant="outline" size="sm" aria-label="My profile" onClick={() => navigate({ to: "/profile" })}><UserCog className="h-4 w-4" aria-hidden /></Button>
             {canUsers && <Button variant="outline" size="sm" onClick={() => navigate({ to: "/users" })}>Users</Button>}
             <Button variant="ghost" size="sm" aria-label="Sign out" onClick={signOut}><LogOut className="h-4 w-4" aria-hidden /></Button>
           </div>
@@ -241,10 +290,29 @@ function Dashboard() {
         </div>
         </section>
 
+        {/* Live event-type counters */}
+        <section aria-labelledby="event-counters-heading">
+          <h2 id="event-counters-heading" className="sr-only">Live event type counters</h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            <MiniCounter label="Fire" value={eventCounters.Fire} icon={<FlameIcon className="h-4 w-4" />} tone="destructive" />
+            <MiniCounter label="Alarm" value={eventCounters.Alarm} icon={<Bell className="h-4 w-4" />} tone="destructive" />
+            <MiniCounter label="Warning" value={eventCounters.Warning} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
+            <MiniCounter label="Fault" value={eventCounters.Fault} icon={<Wrench className="h-4 w-4" />} tone="warning" />
+            <MiniCounter label="Trouble" value={eventCounters.Trouble} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
+            <MiniCounter label="Supervisory" value={eventCounters.Supervisory} icon={<ShieldAlert className="h-4 w-4" />} tone="info" />
+            <MiniCounter label="Monitor" value={eventCounters.Monitor} icon={<Activity className="h-4 w-4" />} tone="monitor" />
+            <MiniCounter label="Disablement" value={eventCounters.Disablement} icon={<PowerOff className="h-4 w-4" />} tone="muted" />
+            <MiniCounter label="FM-200" value={eventCounters["FM-200"]} icon={<Wind className="h-4 w-4" />} tone="info" />
+            <MiniCounter label="CO2" value={eventCounters.CO2} icon={<Droplets className="h-4 w-4" />} tone="info" />
+            <MiniCounter label="Restore" value={eventCounters.Restore} icon={<RotateCcw className="h-4 w-4" />} tone="success" />
+            <MiniCounter label="Active Events" value={eventCounters.Active} icon={<Activity className="h-4 w-4" />} tone="destructive" />
+          </div>
+        </section>
+
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Troubles by Parcel</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Records by Tower</CardTitle></CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byParcel}>
@@ -259,7 +327,7 @@ function Dashboard() {
           </Card>
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base">Trouble Trend</CardTitle>
+              <CardTitle className="text-base">Event Trend</CardTitle>
               <div className="flex gap-1 text-xs">
                 {(["daily","weekly","monthly"] as const).map((p) => (
                   <button key={p} onClick={() => setTrendPeriod(p)} className={"px-2 py-1 rounded border " + (trendPeriod === p ? "bg-primary text-primary-foreground border-primary" : "bg-background")}>{p}</button>
@@ -292,7 +360,7 @@ function Dashboard() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">Alarm Type Distribution</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Event Type Distribution</CardTitle></CardHeader>
             <CardContent className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -345,15 +413,23 @@ function Dashboard() {
           </TabsList>
           <TabsContent value="records" className="space-y-3">
             {/* Filters */}
-            <Card><CardContent className="pt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+            <Card><CardContent className="pt-4 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               <div className="col-span-2 relative">
                 <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input placeholder="Search device / panel / location…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
               </div>
-              <Select value={fParcel} onValueChange={setFParcel}><SelectTrigger><SelectValue placeholder="Parcel" /></SelectTrigger><SelectContent><SelectItem value="all">All parcels</SelectItem>{PARCELS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
+              <Input type="date" aria-label="From date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} />
+              <Input type="date" aria-label="To date" value={fTo} onChange={(e) => setFTo(e.target.value)} />
+              <Select value={fParcel} onValueChange={setFParcel}><SelectTrigger><SelectValue placeholder="Tower" /></SelectTrigger><SelectContent><SelectItem value="all">All towers</SelectItem>{PARCELS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
               <Input placeholder="Floor" value={fFloor} onChange={(e) => setFFloor(e.target.value)} />
-              <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
-              <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
+              <SearchableSelect
+                value={fEventType}
+                onChange={setFEventType}
+                options={EVENT_TYPES as unknown as string[]}
+                allOption={{ value: "all", label: "All event types" }}
+                placeholder="Event Type"
+                searchPlaceholder="Search event type…"
+              />
               <SearchableSelect
                 value={fDeviceType}
                 onChange={setFDeviceType}
@@ -362,9 +438,13 @@ function Dashboard() {
                 placeholder="Device/Event"
                 searchPlaceholder="Search device/event…"
               />
-              <Input placeholder="Operator" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <Select value={fActive} onValueChange={setFActive}><SelectTrigger><SelectValue placeholder="Active/Restore" /></SelectTrigger><SelectContent><SelectItem value="all">Active & Restore</SelectItem>{ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All ticket statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
+              <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All alarm types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
+              <Input placeholder="Technician" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <Input placeholder="User Name" value={fUserName} onChange={(e) => setFUserName(e.target.value)} />
+              <Input placeholder="User ID" value={fUserId} onChange={(e) => setFUserId(e.target.value)} />
               <Input placeholder="Tenant" value={fTenant} onChange={(e) => setFTenant(e.target.value)} />
-              <Input type="date" value={fDate} onChange={(e) => setFDate(e.target.value)} />
             </CardContent></Card>
 
             <Card>
@@ -372,33 +452,59 @@ function Dashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Device</TableHead>
-                      <TableHead>Parcel</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Tower</TableHead>
                       <TableHead>Floor</TableHead>
-                      <TableHead>Device/Event</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead>Panel</TableHead>
+                      <TableHead>Loop</TableHead>
+                      <TableHead>Zone</TableHead>
+                      <TableHead>Device Type</TableHead>
+                      <TableHead>Device No.</TableHead>
+                      <TableHead>Event Type</TableHead>
+                      <TableHead>Fault/Warning</TableHead>
+                      <TableHead>Priority</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Operator</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Event</TableHead>
+                      <TableHead>Cause</TableHead>
+                      <TableHead>Action Taken</TableHead>
+                      <TableHead>Technician</TableHead>
+                      <TableHead>User Name</TableHead>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Photo</TableHead>
+                      <TableHead>Attachment</TableHead>
+                      <TableHead>Remarks</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={22} className="text-center text-muted-foreground py-8">No records match your filters.</TableCell></TableRow>
                     )}
-                    {filtered.map((r) => (
+                    {filtered.map((r) => {
+                      const p = profiles[r.created_by ?? ""];
+                      return (
                       <TableRow key={r.id}>
-                        <TableCell><div className="font-medium">{r.device_id}</div><div className="text-xs text-muted-foreground">{r.location ?? r.panel ?? ""}</div></TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.event_at), "yyyy-MM-dd")}</TableCell>
+                        <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.event_at), "HH:mm")}</TableCell>
                         <TableCell>{r.parcel}</TableCell>
                         <TableCell>{r.floor ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.panel ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.loop ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.zone ?? "—"}</TableCell>
                         <TableCell className="text-xs">{r.device_type ?? "—"}</TableCell>
-                        <TableCell><TypeBadge type={r.alarm_type} /></TableCell>
-                        <TableCell><Badge variant={r.status === "open" ? "destructive" : "secondary"}>{r.status}</Badge></TableCell>
-                        <TableCell>{r.technician ?? "—"}</TableCell>
-                        <TableCell>{r.tenant ?? "—"}</TableCell>
-                        <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.event_at), "yyyy-MM-dd HH:mm")}</TableCell>
+                        <TableCell className="text-xs">{r.device_number ?? r.device_id}</TableCell>
+                        <TableCell><EventBadge type={r.event_type} /></TableCell>
+                        <TableCell className="text-xs">{r.fault_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.priority ?? "—"}</TableCell>
+                        <TableCell><Badge variant={(r.active_status ?? "Active") === "Active" ? "destructive" : "secondary"}>{r.active_status ?? "Active"}</Badge></TableCell>
+                        <TableCell className="text-xs max-w-[160px] truncate" title={r.cause ?? ""}>{r.cause ?? "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[160px] truncate" title={r.action_taken ?? ""}>{r.action_taken ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{r.technician ?? "—"}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{p?.full_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{p?.employee_id ?? r.created_by?.slice(0, 8) ?? "—"}</TableCell>
+                        <TableCell><PhotoStatus status={r.photo_status} url={r.photo_url} /></TableCell>
+                        <TableCell>{r.attachment_url ? <a href={r.attachment_url} target="_blank" rel="noreferrer" aria-label="Open attachment"><Paperclip className="h-4 w-4 text-primary" /></a> : "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[180px] truncate" title={r.remarks ?? r.description ?? ""}>{r.remarks ?? r.description ?? "—"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {canWrite && <Button size="icon" variant="ghost" aria-label={`Edit ${r.device_id}`} onClick={() => { setEditRow(r); setDialogOpen(true); }}><Pencil className="h-4 w-4" aria-hidden /></Button>}
@@ -406,7 +512,8 @@ function Dashboard() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -415,7 +522,7 @@ function Dashboard() {
 
           <TabsContent value="audit">
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <Table>
                   <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Action</TableHead><TableHead>Record</TableHead><TableHead>Actor</TableHead></TableRow></TableHeader>
                   <TableBody>
@@ -425,7 +532,7 @@ function Dashboard() {
                         <TableCell className="text-xs whitespace-nowrap">{format(new Date(a.created_at), "yyyy-MM-dd HH:mm:ss")}</TableCell>
                         <TableCell><Badge variant="outline">{a.action}</Badge></TableCell>
                         <TableCell className="font-mono text-xs">{a.record_id?.slice(0, 8) ?? "—"}</TableCell>
-                        <TableCell className="font-mono text-xs">{a.actor?.slice(0, 8) ?? "system"}</TableCell>
+                        <TableCell className="text-xs">{a.actor ? userLabel(a.actor) : "system"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -441,19 +548,22 @@ function Dashboard() {
   );
 }
 
-function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: "warning"|"info"|"destructive"|"muted"|"success"|"monitor" }) {
-  const toneMap: Record<string, string> = {
-    warning: "bg-warning/15 text-warning-foreground border-warning/30",
-    info: "bg-info/15 text-info border-info/30",
-    destructive: "bg-destructive/15 text-destructive border-destructive/30",
-    muted: "bg-muted text-muted-foreground border-border",
-    success: "bg-success/15 text-success border-success/30",
-    monitor: "bg-chart-5/15 text-chart-5 border-chart-5/30",
-  };
+const TONE_MAP: Record<string, string> = {
+  warning: "bg-warning/15 text-warning-foreground border-warning/30",
+  info: "bg-info/15 text-info border-info/30",
+  destructive: "bg-destructive/15 text-destructive border-destructive/30",
+  muted: "bg-muted text-muted-foreground border-border",
+  success: "bg-success/15 text-success border-success/30",
+  monitor: "bg-chart-5/15 text-chart-5 border-chart-5/30",
+};
+
+type Tone = "warning"|"info"|"destructive"|"muted"|"success"|"monitor";
+
+function KpiCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: Tone }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4 flex items-center gap-3">
-        <div className={"h-11 w-11 rounded-lg border flex items-center justify-center " + toneMap[tone]}>{icon}</div>
+        <div className={"h-11 w-11 rounded-lg border flex items-center justify-center " + TONE_MAP[tone]}>{icon}</div>
         <div>
           <div className="text-2xl font-bold leading-none">{value}</div>
           <div className="text-xs text-muted-foreground mt-1">{label}</div>
@@ -463,14 +573,44 @@ function KpiCard({ label, value, icon, tone }: { label: string; value: number; i
   );
 }
 
-function TypeBadge({ type }: { type: string }) {
-  const map: Record<string, { label: string; className: string }> = {
-    trouble: { label: "Trouble", className: "bg-warning/20 text-warning-foreground border-warning/40" },
-    supervisory: { label: "Supervisory", className: "bg-info/20 text-info border-info/40" },
-    fire_alarm: { label: "Fire", className: "bg-destructive/20 text-destructive border-destructive/40" },
-    disabled: { label: "Disabled", className: "bg-muted text-muted-foreground border-border" },
-    monitor_alert: { label: "Monitor Alert", className: "bg-chart-5/20 text-chart-5 border-chart-5/40" },
+function MiniCounter({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone: Tone }) {
+  return (
+    <div className={"rounded-lg border p-2 flex items-center gap-2 " + TONE_MAP[tone]}>
+      <span className="shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <div className="text-lg font-bold leading-none">{value}</div>
+        <div className="text-[10px] truncate opacity-80">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function EventBadge({ type }: { type: string | null }) {
+  if (!type) return <span className="text-muted-foreground">—</span>;
+  const map: Record<string, string> = {
+    Fire: "bg-destructive/20 text-destructive border-destructive/40",
+    Alarm: "bg-destructive/20 text-destructive border-destructive/40",
+    Warning: "bg-warning/20 text-warning-foreground border-warning/40",
+    Trouble: "bg-warning/20 text-warning-foreground border-warning/40",
+    Fault: "bg-warning/20 text-warning-foreground border-warning/40",
+    Supervisory: "bg-info/20 text-info border-info/40",
+    Monitor: "bg-chart-5/20 text-chart-5 border-chart-5/40",
+    Disablement: "bg-muted text-muted-foreground border-border",
+    Restore: "bg-success/20 text-success border-success/40",
   };
-  const m = map[type] ?? { label: type, className: "" };
-  return <Badge variant="outline" className={m.className}>{m.label}</Badge>;
+  return <Badge variant="outline" className={map[type] ?? ""}>{type}</Badge>;
+}
+
+function PhotoStatus({ status, url }: { status: string | null; url: string | null }) {
+  const s = status ?? "No Photo";
+  const none = s === "No Photo";
+  const icon = none
+    ? <ImageOff className="h-4 w-4 text-muted-foreground" aria-hidden />
+    : <Camera className="h-4 w-4 text-primary" aria-hidden />;
+  const inner = (
+    <span className="flex items-center gap-1 whitespace-nowrap" title={s}>
+      {icon}<span className="text-xs">{s}</span>
+    </span>
+  );
+  return url && !none ? <a href={url} target="_blank" rel="noreferrer" aria-label={`Photo: ${s}`}>{inner}</a> : inner;
 }

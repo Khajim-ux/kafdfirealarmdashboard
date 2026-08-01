@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, type Trouble } from "@/lib/constants";
+import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, PHOTO_STATUSES, PRIORITIES, ACTIVE_STATUSES, type Trouble } from "@/lib/constants";
 import { generateQrDataUrl } from "@/lib/exports";
 import { toast } from "sonner";
 import { QrCode, Camera, ScanLine } from "lucide-react";
@@ -35,6 +35,7 @@ export function TroubleFormDialog({
     if (open) {
       setForm(initial ?? {
         device_id: "", parcel: PARCELS[0], alarm_type: "trouble", status: "open",
+        event_type: "Trouble", active_status: "Active", photo_status: "No Photo", priority: "Medium",
       });
       setQrPreview(null);
     }
@@ -57,13 +58,25 @@ export function TroubleFormDialog({
     if (error) { toast.error(error.message); setUploading(false); return; }
     const { data } = await supabase.storage.from("trouble-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
     upd("photo_url", data?.signedUrl ?? path);
+    setForm((f) => ({ ...f, photo_status: f.photo_status && f.photo_status !== "No Photo" ? f.photo_status : "Uploaded" }));
     setUploading(false);
     toast.success("Photo uploaded");
   }
 
+  async function handleAttachment(file: File) {
+    setUploading(true);
+    const path = `${user?.id ?? "anon"}/attach-${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
+    const { error } = await supabase.storage.from("trouble-photos").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); setUploading(false); return; }
+    const { data } = await supabase.storage.from("trouble-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+    upd("attachment_url", data?.signedUrl ?? path);
+    setUploading(false);
+    toast.success("Attachment uploaded");
+  }
+
   async function save() {
     if (!form.device_id?.trim() || !form.parcel || !form.device_type) {
-      toast.error("Device ID, Parcel and Device/Event Type are required"); return;
+      toast.error("Device ID, Tower and Device/Event Type are required"); return;
     }
     setBusy(true);
     const payload = {
@@ -83,6 +96,18 @@ export function TroubleFormDialog({
       event_at: form.event_at || new Date().toISOString(),
       closed_at: form.status === "closed" ? (form.closed_at || new Date().toISOString()) : null,
       updated_by: user?.id ?? null,
+      loop: form.loop || null,
+      zone: form.zone || null,
+      device_number: form.device_number || null,
+      event_type: form.event_type || null,
+      fault_name: form.fault_name || null,
+      priority: form.priority || null,
+      active_status: form.active_status || "Active",
+      cause: form.cause || null,
+      action_taken: form.action_taken || null,
+      remarks: form.remarks || null,
+      attachment_url: form.attachment_url || null,
+      photo_status: form.photo_status || "No Photo",
     };
     let error;
     if (initial?.id) {
@@ -92,15 +117,16 @@ export function TroubleFormDialog({
     }
     setBusy(false);
     if (error) toast.error(error.message);
-    else { toast.success(initial ? "Trouble updated" : "Trouble created"); onSaved(); onOpenChange(false); }
+    else { toast.success(initial ? "Record updated" : "Record created"); onSaved(); onOpenChange(false); }
   }
+
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{initial ? "Edit Trouble" : "New Trouble"}</DialogTitle>
+            <DialogTitle>{initial ? "Edit Record" : "New Record"}</DialogTitle>
             <DialogDescription>All fields save permanently to the database.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,13 +140,16 @@ export function TroubleFormDialog({
             <div className="space-y-1"><Label>Panel</Label><Input value={form.panel ?? ""} onChange={(e) => upd("panel", e.target.value)} /></div>
             <div className="space-y-1"><Label>Location</Label><Input value={form.location ?? ""} onChange={(e) => upd("location", e.target.value)} /></div>
             <div className="space-y-1">
-              <Label>Parcel *</Label>
+              <Label>Tower *</Label>
               <Select value={form.parcel} onValueChange={(v) => upd("parcel", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{PARCELS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1"><Label>Floor</Label><Input value={form.floor ?? ""} onChange={(e) => upd("floor", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Loop</Label><Input value={form.loop ?? ""} onChange={(e) => upd("loop", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Zone</Label><Input value={form.zone ?? ""} onChange={(e) => upd("zone", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Device Number</Label><Input value={form.device_number ?? ""} onChange={(e) => upd("device_number", e.target.value)} /></div>
             <div className="space-y-1">
               <Label>Device/Event Type *</Label>
               <SearchableSelect
@@ -132,6 +161,31 @@ export function TroubleFormDialog({
               />
             </div>
             <div className="space-y-1">
+              <Label>Event Type</Label>
+              <SearchableSelect
+                value={form.event_type ?? ""}
+                onChange={(v) => upd("event_type", v)}
+                options={EVENT_TYPES as unknown as string[]}
+                placeholder="Select event type…"
+                searchPlaceholder="Search event type…"
+              />
+            </div>
+            <div className="space-y-1"><Label>Fault/Warning Name</Label><Input value={form.fault_name ?? ""} onChange={(e) => upd("fault_name", e.target.value)} /></div>
+            <div className="space-y-1">
+              <Label>Priority</Label>
+              <Select value={form.priority ?? "Medium"} onValueChange={(v) => upd("priority", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Status (Active/Restore)</Label>
+              <Select value={form.active_status ?? "Active"} onValueChange={(v) => upd("active_status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label>Alarm Type</Label>
               <Select value={form.alarm_type} onValueChange={(v) => upd("alarm_type", v as Trouble["alarm_type"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -139,15 +193,30 @@ export function TroubleFormDialog({
               </Select>
             </div>
             <div className="space-y-1">
-              <Label>Status</Label>
+              <Label>Ticket Status</Label>
               <Select value={form.status} onValueChange={(v) => upd("status", v as Trouble["status"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1"><Label>Operator Name</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Technician</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
             <div className="space-y-1"><Label>Tenant</Label><Input value={form.tenant ?? ""} onChange={(e) => upd("tenant", e.target.value)} /></div>
-            <div className="space-y-1 md:col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => upd("description", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Cause</Label><Textarea rows={2} value={form.cause ?? ""} onChange={(e) => upd("cause", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Action Taken</Label><Textarea rows={2} value={form.action_taken ?? ""} onChange={(e) => upd("action_taken", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Description</Label><Textarea rows={2} value={form.description ?? ""} onChange={(e) => upd("description", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Remarks</Label><Textarea rows={2} value={form.remarks ?? ""} onChange={(e) => upd("remarks", e.target.value)} /></div>
+            <div className="space-y-1">
+              <Label>Photo Status</Label>
+              <Select value={form.photo_status ?? "No Photo"} onValueChange={(v) => upd("photo_status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PHOTO_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Attachment</Label>
+              <Input type="file" onChange={(e) => e.target.files?.[0] && handleAttachment(e.target.files[0])} />
+              {form.attachment_url && <a href={form.attachment_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">View attachment</a>}
+            </div>
             <div className="space-y-1 md:col-span-2">
               <Label className="flex items-center gap-2"><Camera className="h-4 w-4" /> Photo</Label>
               <Input type="file" accept="image/*" capture="environment" onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
@@ -161,7 +230,7 @@ export function TroubleFormDialog({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={save} disabled={busy}>{initial ? "Save changes" : "Create trouble"}</Button>
+            <Button onClick={save} disabled={busy}>{initial ? "Save changes" : "Create record"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
