@@ -44,72 +44,132 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          full_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          full_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          full_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       troubles: {
         Row: {
+          action_taken: string | null
+          active_status: string
           alarm_type: Database["public"]["Enums"]["alarm_type"]
+          attachment_url: string | null
+          cause: string | null
           closed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
           device_id: string
+          device_number: string | null
           device_type: string | null
           event_at: string
+          event_type: string | null
+          fault_name: string | null
           floor: string | null
           id: string
           location: string | null
+          loop: string | null
           panel: string | null
           parcel: string
+          photo_status: string
           photo_url: string | null
+          priority: string | null
           qr_code: string | null
+          remarks: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           technician: string | null
           tenant: string | null
           updated_at: string
           updated_by: string | null
+          zone: string | null
         }
         Insert: {
+          action_taken?: string | null
+          active_status?: string
           alarm_type?: Database["public"]["Enums"]["alarm_type"]
+          attachment_url?: string | null
+          cause?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           device_id: string
+          device_number?: string | null
           device_type?: string | null
           event_at?: string
+          event_type?: string | null
+          fault_name?: string | null
           floor?: string | null
           id?: string
           location?: string | null
+          loop?: string | null
           panel?: string | null
           parcel: string
+          photo_status?: string
           photo_url?: string | null
+          priority?: string | null
           qr_code?: string | null
+          remarks?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           technician?: string | null
           tenant?: string | null
           updated_at?: string
           updated_by?: string | null
+          zone?: string | null
         }
         Update: {
+          action_taken?: string | null
+          active_status?: string
           alarm_type?: Database["public"]["Enums"]["alarm_type"]
+          attachment_url?: string | null
+          cause?: string | null
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           device_id?: string
+          device_number?: string | null
           device_type?: string | null
           event_at?: string
+          event_type?: string | null
+          fault_name?: string | null
           floor?: string | null
           id?: string
           location?: string | null
+          loop?: string | null
           panel?: string | null
           parcel?: string
+          photo_status?: string
           photo_url?: string | null
+          priority?: string | null
           qr_code?: string | null
+          remarks?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           technician?: string | null
           tenant?: string | null
           updated_at?: string
           updated_by?: string | null
+          zone?: string | null
         }
         Relationships: []
       }
