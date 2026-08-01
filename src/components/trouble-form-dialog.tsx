@@ -232,8 +232,6 @@ export function TroubleFormDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button onClick={save} disabled={busy}>{initial ? "Save changes" : "Create record"}</Button>
           </DialogFooter>
-
-          </DialogFooter>
         </DialogContent>
       </Dialog>
       <QrScannerDialog open={scannerOpen} onOpenChange={setScannerOpen} onResult={(v) => upd("device_id", v)} />
