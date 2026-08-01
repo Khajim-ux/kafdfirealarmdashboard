@@ -126,7 +126,7 @@ export function TroubleFormDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{initial ? "Edit Trouble" : "New Trouble"}</DialogTitle>
+            <DialogTitle>{initial ? "Edit Record" : "New Record"}</DialogTitle>
             <DialogDescription>All fields save permanently to the database.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,13 +140,16 @@ export function TroubleFormDialog({
             <div className="space-y-1"><Label>Panel</Label><Input value={form.panel ?? ""} onChange={(e) => upd("panel", e.target.value)} /></div>
             <div className="space-y-1"><Label>Location</Label><Input value={form.location ?? ""} onChange={(e) => upd("location", e.target.value)} /></div>
             <div className="space-y-1">
-              <Label>Parcel *</Label>
+              <Label>Tower *</Label>
               <Select value={form.parcel} onValueChange={(v) => upd("parcel", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{PARCELS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1"><Label>Floor</Label><Input value={form.floor ?? ""} onChange={(e) => upd("floor", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Loop</Label><Input value={form.loop ?? ""} onChange={(e) => upd("loop", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Zone</Label><Input value={form.zone ?? ""} onChange={(e) => upd("zone", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Device Number</Label><Input value={form.device_number ?? ""} onChange={(e) => upd("device_number", e.target.value)} /></div>
             <div className="space-y-1">
               <Label>Device/Event Type *</Label>
               <SearchableSelect
@@ -158,6 +161,31 @@ export function TroubleFormDialog({
               />
             </div>
             <div className="space-y-1">
+              <Label>Event Type</Label>
+              <SearchableSelect
+                value={form.event_type ?? ""}
+                onChange={(v) => upd("event_type", v)}
+                options={EVENT_TYPES as unknown as string[]}
+                placeholder="Select event type…"
+                searchPlaceholder="Search event type…"
+              />
+            </div>
+            <div className="space-y-1"><Label>Fault/Warning Name</Label><Input value={form.fault_name ?? ""} onChange={(e) => upd("fault_name", e.target.value)} /></div>
+            <div className="space-y-1">
+              <Label>Priority</Label>
+              <Select value={form.priority ?? "Medium"} onValueChange={(v) => upd("priority", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Status (Active/Restore)</Label>
+              <Select value={form.active_status ?? "Active"} onValueChange={(v) => upd("active_status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label>Alarm Type</Label>
               <Select value={form.alarm_type} onValueChange={(v) => upd("alarm_type", v as Trouble["alarm_type"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -165,15 +193,30 @@ export function TroubleFormDialog({
               </Select>
             </div>
             <div className="space-y-1">
-              <Label>Status</Label>
+              <Label>Ticket Status</Label>
               <Select value={form.status} onValueChange={(v) => upd("status", v as Trouble["status"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1"><Label>Operator Name</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Technician</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
             <div className="space-y-1"><Label>Tenant</Label><Input value={form.tenant ?? ""} onChange={(e) => upd("tenant", e.target.value)} /></div>
-            <div className="space-y-1 md:col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => upd("description", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Cause</Label><Textarea rows={2} value={form.cause ?? ""} onChange={(e) => upd("cause", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Action Taken</Label><Textarea rows={2} value={form.action_taken ?? ""} onChange={(e) => upd("action_taken", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Description</Label><Textarea rows={2} value={form.description ?? ""} onChange={(e) => upd("description", e.target.value)} /></div>
+            <div className="space-y-1 md:col-span-2"><Label>Remarks</Label><Textarea rows={2} value={form.remarks ?? ""} onChange={(e) => upd("remarks", e.target.value)} /></div>
+            <div className="space-y-1">
+              <Label>Photo Status</Label>
+              <Select value={form.photo_status ?? "No Photo"} onValueChange={(v) => upd("photo_status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PHOTO_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Attachment</Label>
+              <Input type="file" onChange={(e) => e.target.files?.[0] && handleAttachment(e.target.files[0])} />
+              {form.attachment_url && <a href={form.attachment_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">View attachment</a>}
+            </div>
             <div className="space-y-1 md:col-span-2">
               <Label className="flex items-center gap-2"><Camera className="h-4 w-4" /> Photo</Label>
               <Input type="file" accept="image/*" capture="environment" onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])} />
@@ -187,7 +230,9 @@ export function TroubleFormDialog({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={save} disabled={busy}>{initial ? "Save changes" : "Create trouble"}</Button>
+            <Button onClick={save} disabled={busy}>{initial ? "Save changes" : "Create record"}</Button>
+          </DialogFooter>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
