@@ -142,4 +142,36 @@ export interface Trouble {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  loop: string | null;
+  zone: string | null;
+  device_number: string | null;
+  event_type: string | null;
+  fault_name: string | null;
+  priority: string | null;
+  active_status: string;
+  cause: string | null;
+  action_taken: string | null;
+  remarks: string | null;
+  attachment_url: string | null;
+  photo_status: string;
 }
+
+export interface Profile {
+  user_id: string;
+  full_name: string | null;
+  employee_id: string | null;
+}
+
+export function formatUser(
+  id: string | null | undefined,
+  profiles: Record<string, Profile>,
+  roles: Record<string, string>,
+) {
+  if (!id) return "—";
+  const p = profiles[id];
+  const name = p?.full_name || "Unknown user";
+  const emp = p?.employee_id || id.slice(0, 8);
+  const role = roles[id];
+  return `${name} (${emp})${role ? ` - ${role}` : ""}`;
+}
+
