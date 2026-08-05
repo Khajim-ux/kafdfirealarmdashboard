@@ -9,10 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, PHOTO_STATUSES, PRIORITIES, ACTIVE_STATUSES, type Trouble } from "@/lib/constants";
 import { generateQrDataUrl } from "@/lib/exports";
 import { toast } from "sonner";
-import { QrCode, Camera, ScanLine } from "lucide-react";
+import { QrCode, Camera, ScanLine, Sparkles } from "lucide-react";
 import { QrScannerDialog } from "./qr-scanner-dialog";
 import { SearchableSelect } from "./searchable-select";
 import { useAuth } from "@/hooks/use-auth";
+import { useServerFn } from "@tanstack/react-start";
+import { scanPanelPhoto } from "@/lib/ai-scan.functions";
+
 
 type FormShape = Partial<Trouble>;
 
@@ -25,11 +28,14 @@ export function TroubleFormDialog({
   onSaved: () => void;
 }) {
   const { user } = useAuth();
+  const runScan = useServerFn(scanPanelPhoto);
   const [form, setForm] = useState<FormShape>({});
   const [busy, setBusy] = useState(false);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
 
   useEffect(() => {
     if (open) {
@@ -50,6 +56,36 @@ export function TroubleFormDialog({
   function upd<K extends keyof Trouble>(k: K, v: Trouble[K] | null) {
     setForm((f) => ({ ...f, [k]: v }));
   }
+
+  async function handleAiScan(file: File) {
+    setScanning(true);
+    try {
+      const imageDataUrl: string = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("Could not read the image"));
+        fr.readAsDataURL(file);
+      });
+      const r = await runScan({ data: { imageDataUrl } });
+      setForm((f) => ({
+        ...f,
+        panel: r.panel_name || r.panel_id || f.panel,
+        device_id: f.device_id || r.panel_id || r.device_address || "",
+        loop: r.loop || f.loop,
+        device_number: r.device_address || f.device_number,
+        device_type: r.device_type || f.device_type,
+        floor: r.floor || f.floor,
+        location: r.location || f.location,
+        description: r.event_details || f.description,
+      }));
+      toast.success("Photo scanned — please review the filled fields");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI scan failed");
+    } finally {
+      setScanning(false);
+    }
+  }
+
 
   async function handlePhoto(file: File) {
     setUploading(true);
@@ -129,7 +165,15 @@ export function TroubleFormDialog({
             <DialogTitle>{initial ? "Edit Record" : "New Record"}</DialogTitle>
             <DialogDescription>All fields save permanently to the database.</DialogDescription>
           </DialogHeader>
+          <div className="rounded-lg border border-dashed p-3 space-y-2">
+            <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Photo Scan</Label>
+            <p className="text-xs text-muted-foreground">Take a photo of the panel screen or device label — AI reads panel name/ID, loop, device address, type, floor, location and event details.</p>
+            <Input type="file" accept="image/*" capture="environment" disabled={scanning}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleAiScan(f); e.target.value = ""; }} />
+            {scanning && <p className="text-xs text-muted-foreground">Scanning photo…</p>}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
             <div className="space-y-1">
               <Label>Device ID *</Label>
               <div className="flex gap-2">
@@ -199,7 +243,7 @@ export function TroubleFormDialog({
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1"><Label>Technician</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Operator</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
             <div className="space-y-1"><Label>Tenant</Label><Input value={form.tenant ?? ""} onChange={(e) => upd("tenant", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2"><Label>Cause</Label><Textarea rows={2} value={form.cause ?? ""} onChange={(e) => upd("cause", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2"><Label>Action Taken</Label><Textarea rows={2} value={form.action_taken ?? ""} onChange={(e) => upd("action_taken", e.target.value)} /></div>

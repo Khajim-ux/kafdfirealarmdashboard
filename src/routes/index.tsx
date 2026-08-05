@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
   PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, ACTIVE_STATUSES,
-  canEditTicket, canDeleteTicket, canManageUsers, formatUser,
+  canEditTicket, canDeleteTicket, canManageUsers, formatUser, normalizeEventType,
   type Trouble, type Profile,
 } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,7 +114,7 @@ function Dashboard() {
     if (fFloor && (r.floor ?? "").toLowerCase() !== fFloor.toLowerCase()) return false;
     if (fStatus !== "all" && r.status !== fStatus) return false;
     if (fActive !== "all" && (r.active_status ?? "Active") !== fActive) return false;
-    if (fEventType !== "all" && r.event_type !== fEventType) return false;
+    if (fEventType !== "all" && normalizeEventType(r.event_type) !== fEventType) return false;
     if (fType !== "all" && r.alarm_type !== fType) return false;
     if (fDeviceType !== "all" && r.device_type !== fDeviceType) return false;
     if (fTech && !(r.technician ?? "").toLowerCase().includes(fTech.toLowerCase())) return false;
@@ -157,9 +157,9 @@ function Dashboard() {
   }, [rows]);
 
   const eventCounters = useMemo(() => {
-    const count = (t: string) => rows.filter((r) => r.event_type === t).length;
+    const count = (t: string) => rows.filter((r) => normalizeEventType(r.event_type) === t).length;
     return {
-      Fire: count("Fire"), Alarm: count("Alarm"), Warning: count("Warning"),
+      "Fire / Alarm": count("Fire / Alarm"), Warning: count("Warning"),
       Fault: count("Fault"), Trouble: count("Trouble"), Supervisory: count("Supervisory"),
       Monitor: count("Monitor"), Disablement: count("Disablement"),
       "FM-200": count("FM-200"), CO2: count("CO2"), Restore: count("Restore"),
@@ -213,7 +213,7 @@ function Dashboard() {
   ];
 
   const typeDistribution = useMemo(() =>
-    EVENT_TYPES.map((t) => ({ name: t, value: rows.filter((r) => r.event_type === t).length }))
+    EVENT_TYPES.map((t) => ({ name: t, value: rows.filter((r) => normalizeEventType(r.event_type) === t).length }))
       .filter((d) => d.value > 0),
   [rows]);
 
@@ -227,7 +227,7 @@ function Dashboard() {
   }, [rows]);
 
   const analytics = useMemo(() => ({
-    totalAlarms: rows.filter((r) => r.event_type === "Fire" || r.event_type === "Alarm").length,
+    totalAlarms: rows.filter((r) => normalizeEventType(r.event_type) === "Fire / Alarm").length,
     totalTroubles: rows.filter((r) => r.event_type === "Trouble").length,
     totalSupervisory: rows.filter((r) => r.event_type === "Supervisory").length,
     totalMonitor: rows.filter((r) => r.event_type === "Monitor").length,
@@ -294,8 +294,7 @@ function Dashboard() {
         <section aria-labelledby="event-counters-heading">
           <h2 id="event-counters-heading" className="sr-only">Live event type counters</h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-            <MiniCounter label="Fire" value={eventCounters.Fire} icon={<FlameIcon className="h-4 w-4" />} tone="destructive" />
-            <MiniCounter label="Alarm" value={eventCounters.Alarm} icon={<Bell className="h-4 w-4" />} tone="destructive" />
+            <MiniCounter label="Fire / Alarm" value={eventCounters["Fire / Alarm"]} icon={<FlameIcon className="h-4 w-4" />} tone="destructive" />
             <MiniCounter label="Warning" value={eventCounters.Warning} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
             <MiniCounter label="Fault" value={eventCounters.Fault} icon={<Wrench className="h-4 w-4" />} tone="warning" />
             <MiniCounter label="Trouble" value={eventCounters.Trouble} icon={<AlertTriangle className="h-4 w-4" />} tone="warning" />
@@ -441,7 +440,7 @@ function Dashboard() {
               <Select value={fActive} onValueChange={setFActive}><SelectTrigger><SelectValue placeholder="Active/Restore" /></SelectTrigger><SelectContent><SelectItem value="all">Active & Restore</SelectItem>{ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
               <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All ticket statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
               <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All alarm types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
-              <Input placeholder="Technician" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <Input placeholder="Operator" value={fTech} onChange={(e) => setFTech(e.target.value)} />
               <Input placeholder="User Name" value={fUserName} onChange={(e) => setFUserName(e.target.value)} />
               <Input placeholder="User ID" value={fUserId} onChange={(e) => setFUserId(e.target.value)} />
               <Input placeholder="Tenant" value={fTenant} onChange={(e) => setFTenant(e.target.value)} />
@@ -467,7 +466,7 @@ function Dashboard() {
                       <TableHead>Status</TableHead>
                       <TableHead>Cause</TableHead>
                       <TableHead>Action Taken</TableHead>
-                      <TableHead>Technician</TableHead>
+                      <TableHead>Operator</TableHead>
                       <TableHead>User Name</TableHead>
                       <TableHead>User ID</TableHead>
                       <TableHead>Photo</TableHead>
@@ -493,7 +492,7 @@ function Dashboard() {
                         <TableCell className="text-xs">{r.zone ?? "—"}</TableCell>
                         <TableCell className="text-xs">{r.device_type ?? "—"}</TableCell>
                         <TableCell className="text-xs">{r.device_number ?? r.device_id}</TableCell>
-                        <TableCell><EventBadge type={r.event_type} /></TableCell>
+                        <TableCell><EventBadge type={normalizeEventType(r.event_type)} /></TableCell>
                         <TableCell className="text-xs">{r.fault_name ?? "—"}</TableCell>
                         <TableCell className="text-xs">{r.priority ?? "—"}</TableCell>
                         <TableCell><Badge variant={(r.active_status ?? "Active") === "Active" ? "destructive" : "secondary"}>{r.active_status ?? "Active"}</Badge></TableCell>
@@ -588,8 +587,7 @@ function MiniCounter({ label, value, icon, tone }: { label: string; value: numbe
 function EventBadge({ type }: { type: string | null }) {
   if (!type) return <span className="text-muted-foreground">—</span>;
   const map: Record<string, string> = {
-    Fire: "bg-destructive/20 text-destructive border-destructive/40",
-    Alarm: "bg-destructive/20 text-destructive border-destructive/40",
+    "Fire / Alarm": "bg-destructive/20 text-destructive border-destructive/40",
     Warning: "bg-warning/20 text-warning-foreground border-warning/40",
     Trouble: "bg-warning/20 text-warning-foreground border-warning/40",
     Fault: "bg-warning/20 text-warning-foreground border-warning/40",

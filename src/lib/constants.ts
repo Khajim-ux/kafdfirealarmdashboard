@@ -17,9 +17,16 @@ export const STATUSES = [
 ] as const;
 
 export const EVENT_TYPES = [
-  "Fire","Alarm","Warning","Trouble","Fault","Supervisory","Monitor",
+  "Fire / Alarm","Warning","Trouble","Fault","Supervisory","Monitor",
   "Disablement","Maintenance","Test","Restore","FM-200","CO2","Other",
 ] as const;
+
+/** Legacy rows may store "Fire" or "Alarm" separately — show them as one column. */
+export function normalizeEventType(t: string | null | undefined) {
+  if (!t) return null;
+  return t === "Fire" || t === "Alarm" ? "Fire / Alarm" : t;
+}
+
 
 export const DEVICE_TYPES = [
   "Mains Failed",
@@ -98,7 +105,7 @@ export type AlarmType = "trouble" | "supervisory" | "fire_alarm" | "disabled" | 
 export type TicketStatus = "open" | "closed";
 export type AppRole = "admin" | "manager" | "engineer" | "supervisor" | "operator" | "viewer";
 
-export const ASSIGNABLE_ROLES: AppRole[] = ["admin", "manager", "engineer", "supervisor", "operator", "viewer"];
+export const ASSIGNABLE_ROLES: AppRole[] = ["admin", "manager", "supervisor", "engineer", "operator"];
 
 
 // Permission helpers — mirror backend RLS policies.
