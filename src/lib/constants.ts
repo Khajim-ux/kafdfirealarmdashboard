@@ -105,7 +105,7 @@ export type AlarmType = "trouble" | "supervisory" | "fire_alarm" | "disabled" | 
 export type TicketStatus = "open" | "closed";
 export type AppRole = "admin" | "manager" | "engineer" | "supervisor" | "operator" | "viewer";
 
-export const ASSIGNABLE_ROLES: AppRole[] = ["admin", "manager", "engineer", "supervisor", "operator", "viewer"];
+export const ASSIGNABLE_ROLES: AppRole[] = ["admin", "manager", "supervisor", "engineer", "operator"];
 
 
 // Permission helpers — mirror backend RLS policies.

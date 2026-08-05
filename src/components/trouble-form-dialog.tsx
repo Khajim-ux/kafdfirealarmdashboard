@@ -199,7 +199,7 @@ export function TroubleFormDialog({
                 <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1"><Label>Technician</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
+            <div className="space-y-1"><Label>Operator</Label><Input value={form.technician ?? ""} onChange={(e) => upd("technician", e.target.value)} /></div>
             <div className="space-y-1"><Label>Tenant</Label><Input value={form.tenant ?? ""} onChange={(e) => upd("tenant", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2"><Label>Cause</Label><Textarea rows={2} value={form.cause ?? ""} onChange={(e) => upd("cause", e.target.value)} /></div>
             <div className="space-y-1 md:col-span-2"><Label>Action Taken</Label><Textarea rows={2} value={form.action_taken ?? ""} onChange={(e) => upd("action_taken", e.target.value)} /></div>

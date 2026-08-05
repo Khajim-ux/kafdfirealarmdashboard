@@ -441,7 +441,7 @@ function Dashboard() {
               <Select value={fActive} onValueChange={setFActive}><SelectTrigger><SelectValue placeholder="Active/Restore" /></SelectTrigger><SelectContent><SelectItem value="all">Active & Restore</SelectItem>{ACTIVE_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
               <Select value={fStatus} onValueChange={setFStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All ticket statuses</SelectItem>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select>
               <Select value={fType} onValueChange={setFType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All alarm types</SelectItem>{ALARM_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select>
-              <Input placeholder="Technician" value={fTech} onChange={(e) => setFTech(e.target.value)} />
+              <Input placeholder="Operator" value={fTech} onChange={(e) => setFTech(e.target.value)} />
               <Input placeholder="User Name" value={fUserName} onChange={(e) => setFUserName(e.target.value)} />
               <Input placeholder="User ID" value={fUserId} onChange={(e) => setFUserId(e.target.value)} />
               <Input placeholder="Tenant" value={fTenant} onChange={(e) => setFTenant(e.target.value)} />
@@ -467,7 +467,7 @@ function Dashboard() {
                       <TableHead>Status</TableHead>
                       <TableHead>Cause</TableHead>
                       <TableHead>Action Taken</TableHead>
-                      <TableHead>Technician</TableHead>
+                      <TableHead>Operator</TableHead>
                       <TableHead>User Name</TableHead>
                       <TableHead>User ID</TableHead>
                       <TableHead>Photo</TableHead>

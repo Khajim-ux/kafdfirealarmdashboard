@@ -2,7 +2,7 @@ import QRCode from "qrcode";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import type { Trouble } from "./constants";
+import { normalizeEventType, type Trouble } from "./constants";
 import { format } from "date-fns";
 
 export async function generateQrDataUrl(text: string) {
@@ -29,13 +29,13 @@ export function toRecordRows(rows: Trouble[], userLabel: UserLabel = () => "") {
     Zone: r.zone ?? "",
     "Device Type": r.device_type ?? "",
     "Device Number": r.device_number ?? "",
-    "Event Type": r.event_type ?? "",
+    "Event Type": normalizeEventType(r.event_type) ?? "",
     "Fault/Warning Name": r.fault_name ?? "",
     Priority: r.priority ?? "",
     Status: r.active_status ?? "",
     Cause: r.cause ?? "",
     "Action Taken": r.action_taken ?? "",
-    Technician: r.technician ?? "",
+    Operator: r.technician ?? "",
     "User Name": userLabel(r.created_by),
     "User ID": r.created_by ?? "",
     "Photo Status": r.photo_status ?? "",
@@ -74,7 +74,7 @@ export function exportToPdf(rows: Trouble[], userLabel: UserLabel = () => "", fi
     head: [[
       "Date", "Time", "Tower", "Floor", "Panel", "Loop", "Zone", "Device Type", "Dev #",
       "Event Type", "Fault/Warning", "Priority", "Status", "Cause", "Action Taken",
-      "Technician", "User", "Photo", "Remarks",
+      "Operator", "User", "Photo", "Remarks",
     ]],
     body: rows.map((r) => [
       fmtDate(r.event_at), fmtTime(r.event_at), r.parcel, r.floor ?? "", r.panel ?? "",
