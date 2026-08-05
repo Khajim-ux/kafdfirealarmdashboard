@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
   PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, ACTIVE_STATUSES,
-  canEditTicket, canDeleteTicket, canManageUsers, formatUser,
+  canEditTicket, canDeleteTicket, canManageUsers, formatUser, normalizeEventType,
   type Trouble, type Profile,
 } from "@/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
