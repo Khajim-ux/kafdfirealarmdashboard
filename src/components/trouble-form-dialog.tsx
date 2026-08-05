@@ -57,6 +57,36 @@ export function TroubleFormDialog({
     setForm((f) => ({ ...f, [k]: v }));
   }
 
+  async function handleAiScan(file: File) {
+    setScanning(true);
+    try {
+      const imageDataUrl: string = await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("Could not read the image"));
+        fr.readAsDataURL(file);
+      });
+      const r = await runScan({ data: { imageDataUrl } });
+      setForm((f) => ({
+        ...f,
+        panel: r.panel_name || r.panel_id || f.panel,
+        device_id: f.device_id || r.panel_id || r.device_address || "",
+        loop: r.loop || f.loop,
+        device_number: r.device_address || f.device_number,
+        device_type: r.device_type || f.device_type,
+        floor: r.floor || f.floor,
+        location: r.location || f.location,
+        description: r.event_details || f.description,
+      }));
+      toast.success("Photo scanned — please review the filled fields");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "AI scan failed");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+
   async function handlePhoto(file: File) {
     setUploading(true);
     const path = `${user?.id ?? "anon"}/${Date.now()}-${file.name.replace(/[^a-z0-9.-]/gi, "_")}`;
