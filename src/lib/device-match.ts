@@ -94,9 +94,9 @@ export async function findExistingDevice(input: {
 }): Promise<DeviceHistory | null> {
   const cols = "device_id,panel,loop,zone,device_number,device_type,parcel,floor,location,tenant";
 
-  const attempts: Array<() => ReturnType<typeof buildQuery>> = [];
   const buildQuery = () =>
     supabase.from("troubles").select(cols).order("event_at", { ascending: false }).limit(1);
+  const attempts: Array<() => ReturnType<typeof buildQuery>> = [];
 
   if (input.panel && input.loop && input.device_number) {
     attempts.push(() =>
