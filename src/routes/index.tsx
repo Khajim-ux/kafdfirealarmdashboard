@@ -545,6 +545,7 @@ function Dashboard() {
       </main>
 
       <TroubleFormDialog open={dialogOpen} onOpenChange={setDialogOpen} initial={editRow} onSaved={load} />
+      <AiAutoScanDialog open={scanOpen} onOpenChange={setScanOpen} onSaved={load} />
     </div>
   );
 }
