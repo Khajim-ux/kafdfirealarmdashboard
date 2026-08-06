@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/searchable-select";
+import { CameraCapture } from "@/components/camera-capture";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useServerFn } from "@tanstack/react-start";
@@ -205,9 +206,8 @@ export function AiAutoScanDialog({
 
         {step === "capture" ? (
           <div className="space-y-3">
-            <Label>Take or upload a photo</Label>
-            <Input type="file" accept="image/*" capture="environment" disabled={busy}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.target.value = ""; }} />
+            <Label>Take a photo or upload one</Label>
+            <CameraCapture disabled={busy} onPhoto={(f) => void handleFile(f)} />
             <p className="text-xs text-muted-foreground">Supported panels: EST3, EST4, Notifier, Simplex, Siemens, Edwards, Honeywell.</p>
             {busy && <p className="text-sm text-muted-foreground">{statusText}</p>}
           </div>
@@ -228,6 +228,15 @@ export function AiAutoScanDialog({
             </div>
 
             {draft.photo_url && <img src={draft.photo_url} alt="Scanned panel" className="h-36 rounded border object-contain" />}
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 rounded-md border p-3 text-sm">
+              {([["Panel", draft.panel], ["Loop", draft.loop], ["Device", draft.device_number || draft.device_id], ["Zone", draft.zone], ["Event Type", draft.event_type]] as const).map(([k, v]) => (
+                <div key={k}>
+                  <div className="text-xs text-muted-foreground">{k}</div>
+                  <div className="font-medium truncate">{v || "—"}</div>
+                </div>
+              ))}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1"><Label>Device ID / Address *</Label><Input className={fieldClass("device_id")} value={draft.device_id ?? ""} onChange={(e) => upd("device_id", e.target.value)} /></div>
