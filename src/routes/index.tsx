@@ -77,6 +77,7 @@ function Dashboard() {
   const [fTo, setFTo] = useState<string>("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [editRow, setEditRow] = useState<Trouble | null>(null);
 
   const load = useCallback(async () => {
