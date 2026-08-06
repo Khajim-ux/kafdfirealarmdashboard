@@ -18,11 +18,12 @@ import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
   RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList,
   Flame as FlameIcon, Activity, Camera, ImageOff, Table2, Paperclip, UserCog,
-  Bell, Wrench, RotateCcw, Wind, Droplets,
+  Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
+import { AiAutoScanDialog } from "@/components/ai-auto-scan-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { SearchableSelect } from "@/components/searchable-select";
 import { exportToExcel, exportToPdf, exportToCsv } from "@/lib/exports";
@@ -77,6 +78,7 @@ function Dashboard() {
   const [fTo, setFTo] = useState<string>("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
   const [editRow, setEditRow] = useState<Trouble | null>(null);
 
   const load = useCallback(async () => {
@@ -268,6 +270,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered, userLabel)}><FileSpreadsheet className="h-4 w-4 mr-1" aria-hidden />Excel</Button>
             <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, userLabel)}><Table2 className="h-4 w-4 mr-1" aria-hidden />CSV</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered, userLabel)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
+            {canWrite && <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}><Sparkles className="h-4 w-4 mr-1" aria-hidden />AI Scan</Button>}
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
             <Button variant="outline" size="sm" aria-label="My profile" onClick={() => navigate({ to: "/profile" })}><UserCog className="h-4 w-4" aria-hidden /></Button>
             {canUsers && <Button variant="outline" size="sm" onClick={() => navigate({ to: "/users" })}>Users</Button>}
@@ -543,6 +546,7 @@ function Dashboard() {
       </main>
 
       <TroubleFormDialog open={dialogOpen} onOpenChange={setDialogOpen} initial={editRow} onSaved={load} />
+      <AiAutoScanDialog open={scanOpen} onOpenChange={setScanOpen} onSaved={load} />
     </div>
   );
 }
