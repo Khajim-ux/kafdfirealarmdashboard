@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
 import { TroubleFormDialog } from "@/components/trouble-form-dialog";
+import { AiAutoScanDialog } from "@/components/ai-auto-scan-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { SearchableSelect } from "@/components/searchable-select";
 import { exportToExcel, exportToPdf, exportToCsv } from "@/lib/exports";
