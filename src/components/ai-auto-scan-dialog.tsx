@@ -205,9 +205,8 @@ export function AiAutoScanDialog({
 
         {step === "capture" ? (
           <div className="space-y-3">
-            <Label>Take or upload a photo</Label>
-            <Input type="file" accept="image/*" capture="environment" disabled={busy}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleFile(f); e.target.value = ""; }} />
+            <Label>Take a photo or upload one</Label>
+            <CameraCapture disabled={busy} onPhoto={(f) => void handleFile(f)} />
             <p className="text-xs text-muted-foreground">Supported panels: EST3, EST4, Notifier, Simplex, Siemens, Edwards, Honeywell.</p>
             {busy && <p className="text-sm text-muted-foreground">{statusText}</p>}
           </div>
