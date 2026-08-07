@@ -1,16 +1,6 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera as CameraIcon, ImageUp, RefreshCw, SwitchCamera } from "lucide-react";
-
-const Camera = lazy(async () => {
-  const m = await import("react-camera-pro");
-  return { default: m.Camera as unknown as React.ComponentType<Record<string, unknown>> };
-});
-
-type CameraHandle = {
-  takePhoto: (type?: "base64url" | "imgData") => string | ImageData;
-  switchCamera: () => "user" | "environment";
-};
 
 type Status = "probing" | "ready" | "unsupported";
 
@@ -29,10 +19,8 @@ function permissionMessage(e: unknown): string {
 }
 
 /**
- * Live camera preview with capture + gallery fallback.
- * Falls back to the device camera app / file upload automatically when the live
- * camera is unavailable (permission denied, no device, or insecure context —
- * common on Android Chrome).
+ * Live camera preview with capture + gallery fallback, built on the native
+ * MediaDevices API (React 19 compatible, no third-party camera library).
  */
 export function CameraCapture({
   onPhoto,
@@ -41,14 +29,21 @@ export function CameraCapture({
   onPhoto: (file: File) => void;
   disabled?: boolean;
 }) {
-  const camRef = useRef<CameraHandle | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const nativeRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<Status>("probing");
   const [error, setError] = useState<string | null>(null);
-  const [numCameras, setNumCameras] = useState(0);
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
+  const [multiCamera, setMultiCamera] = useState(false);
 
-  const probe = useCallback(async () => {
+  const stop = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  const start = useCallback(async (mode: "environment" | "user") => {
     setStatus("probing");
     setError(null);
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
@@ -57,30 +52,54 @@ export function CameraCapture({
       return;
     }
     try {
-      // Requests permission up-front so the preview starts without a second prompt.
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
-      stream.getTracks().forEach((t) => t.stop());
+      stop();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: mode }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => undefined);
+      }
       setStatus("ready");
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        setMultiCamera(devices.filter((d) => d.kind === "videoinput").length > 1);
+      } catch {
+        setMultiCamera(false);
+      }
     } catch (e) {
+      stop();
       setStatus("unsupported");
       setError(permissionMessage(e));
     }
-  }, []);
+  }, [stop]);
 
   useEffect(() => {
-    void probe();
-  }, [probe]);
+    void start(facing);
+    return stop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facing]);
 
   function capture() {
     try {
-      const dataUrl = camRef.current?.takePhoto("base64url");
-      if (typeof dataUrl !== "string") throw new Error("empty");
-      const [meta, b64] = dataUrl.split(",");
-      const mime = meta?.match(/data:(.*?);/)?.[1] ?? "image/jpeg";
-      const bin = atob(b64 ?? "");
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      onPhoto(new File([bytes], `capture-${Date.now()}.jpg`, { type: mime }));
+      const video = videoRef.current;
+      if (!video || !video.videoWidth) throw new Error("empty");
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no canvas");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { setError("Could not capture the photo — try Take Photo or Upload from Gallery."); return; }
+          onPhoto(new File([blob], `capture-${Date.now()}.jpg`, { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.92,
+      );
     } catch {
       setError("Could not capture the photo — try Take Photo or Upload from Gallery.");
     }
@@ -90,30 +109,23 @@ export function CameraCapture({
 
   return (
     <div className="space-y-3">
-      {live && (
-        <div className="relative overflow-hidden rounded-lg border bg-muted aspect-[3/4] max-h-[46vh]">
-          <Suspense fallback={<div className="grid h-full place-items-center text-sm text-muted-foreground">Starting camera…</div>}>
-            <Camera
-              ref={camRef as never}
-              facingMode="environment"
-              aspectRatio="cover"
-              numberOfCamerasCallback={setNumCameras}
-              errorMessages={{
-                noCameraAccessible: "No camera device accessible.",
-                permissionDenied: "Camera permission denied.",
-                switchCamera: "Cannot switch camera.",
-                canvas: "Canvas is not supported.",
-              }}
-            />
-          </Suspense>
-          {numCameras > 1 && (
-            <Button type="button" size="icon" variant="secondary" className="absolute right-2 top-2"
-              aria-label="Switch camera" onClick={() => camRef.current?.switchCamera()}>
-              <SwitchCamera className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      )}
+      <div className={live ? "relative overflow-hidden rounded-lg border bg-muted aspect-[3/4] max-h-[46vh]" : "hidden"}>
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          autoPlay
+          className="h-full w-full object-cover"
+          aria-label="Live camera preview"
+        />
+        {multiCamera && (
+          <Button type="button" size="icon" variant="secondary" className="absolute right-2 top-2"
+            aria-label="Switch camera"
+            onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}>
+            <SwitchCamera className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
       {status === "probing" && <p className="text-sm text-muted-foreground">Requesting camera permission…</p>}
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
@@ -128,7 +140,7 @@ export function CameraCapture({
             <Button type="button" disabled={disabled} onClick={() => nativeRef.current?.click()}>
               <CameraIcon className="h-4 w-4 mr-1" aria-hidden />Take photo
             </Button>
-            <Button type="button" variant="ghost" disabled={disabled} onClick={() => void probe()}>
+            <Button type="button" variant="ghost" disabled={disabled} onClick={() => void start(facing)}>
               <RefreshCw className="h-4 w-4 mr-1" aria-hidden />Retry camera
             </Button>
           </>
