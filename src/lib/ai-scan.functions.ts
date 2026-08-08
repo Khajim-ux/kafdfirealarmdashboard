@@ -46,18 +46,78 @@ const FIELDS = [
   "panel_brand",
 ];
 
+/**
+ * Resolves the AI provider from environment variables so the scan works on
+ * Lovable Cloud AND any external host (Vercel, Netlify, self-hosted).
+ *
+ * Set ONE of these in the host's environment variables:
+ *   LOVABLE_API_KEY  – Lovable AI Gateway (auto-set inside Lovable, copy it to Vercel to reuse it)
+ *   OPENAI_API_KEY   – OpenAI directly (optional AI_MODEL, default gpt-4o)
+ *   GEMINI_API_KEY   – Google Gemini (optional AI_MODEL, default gemini-2.5-flash)
+ * Optional for any provider: AI_BASE_URL (OpenAI-compatible base, no trailing /chat/completions)
+ */
+type Provider = {
+  url: string;
+  headers: Record<string, string>;
+  model: string;
+  extra: Record<string, unknown>;
+};
+
+function resolveProvider(): Provider | null {
+  const env = process.env;
+  const model = env["AI_MODEL"]?.trim();
+  const baseOverride = env["AI_BASE_URL"]?.trim().replace(/\/+$/, "");
+
+  const lovable = env["LOVABLE_API_KEY"]?.trim();
+  if (lovable) {
+    return {
+      url: `${baseOverride || "https://ai.gateway.lovable.dev/v1"}/chat/completions`,
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": lovable },
+      model: model || "openai/gpt-5.6-sol",
+      extra: { reasoning_effort: "none" },
+    };
+  }
+
+  const openai = env["OPENAI_API_KEY"]?.trim();
+  if (openai) {
+    return {
+      url: `${baseOverride || "https://api.openai.com/v1"}/chat/completions`,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${openai}` },
+      model: model || "gpt-4o",
+      extra: {},
+    };
+  }
+
+  const gemini = (env["GEMINI_API_KEY"] || env["GOOGLE_API_KEY"])?.trim();
+  if (gemini) {
+    return {
+      url: `${baseOverride || "https://generativelanguage.googleapis.com/v1beta/openai"}/chat/completions`,
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${gemini}` },
+      model: model || "gemini-2.5-flash",
+      extra: {},
+    };
+  }
+
+  return null;
+}
+
 export const scanPanelPhoto = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<ScanResult> => {
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) throw new Error("AI is not configured");
+    const provider = resolveProvider();
+    if (!provider) {
+      throw new Error(
+        "AI is not configured on this deployment. Add an environment variable named LOVABLE_API_KEY (Lovable AI Gateway), OPENAI_API_KEY, or GEMINI_API_KEY to the hosting project, then redeploy.",
+      );
+    }
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch(provider.url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      headers: provider.headers,
       body: JSON.stringify({
-        model: "openai/gpt-5.6-sol",
-        reasoning_effort: "none",
+        model: provider.model,
+        ...provider.extra,
+
         messages: [
           {
             role: "system",
