@@ -56,7 +56,14 @@ const FIELDS = [
  *   GEMINI_API_KEY   – Google Gemini (optional AI_MODEL, default gemini-2.5-flash)
  * Optional for any provider: AI_BASE_URL (OpenAI-compatible base, no trailing /chat/completions)
  */
-function resolveProvider() {
+type Provider = {
+  url: string;
+  headers: Record<string, string>;
+  model: string;
+  extra: Record<string, unknown>;
+};
+
+function resolveProvider(): Provider | null {
   const env = process.env;
   const model = env["AI_MODEL"]?.trim();
   const baseOverride = env["AI_BASE_URL"]?.trim().replace(/\/+$/, "");
@@ -67,7 +74,7 @@ function resolveProvider() {
       url: `${baseOverride || "https://ai.gateway.lovable.dev/v1"}/chat/completions`,
       headers: { "Content-Type": "application/json", "Lovable-API-Key": lovable },
       model: model || "openai/gpt-5.6-sol",
-      extra: { reasoning_effort: "none" } as Record<string, unknown>,
+      extra: { reasoning_effort: "none" },
     };
   }
 
@@ -77,7 +84,7 @@ function resolveProvider() {
       url: `${baseOverride || "https://api.openai.com/v1"}/chat/completions`,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${openai}` },
       model: model || "gpt-4o",
-      extra: {} as Record<string, unknown>,
+      extra: {},
     };
   }
 
@@ -87,7 +94,7 @@ function resolveProvider() {
       url: `${baseOverride || "https://generativelanguage.googleapis.com/v1beta/openai"}/chat/completions`,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${gemini}` },
       model: model || "gemini-2.5-flash",
-      extra: {} as Record<string, unknown>,
+      extra: {},
     };
   }
 
@@ -107,10 +114,10 @@ export const scanPanelPhoto = createServerFn({ method: "POST" })
     const res = await fetch(provider.url, {
       method: "POST",
       headers: provider.headers,
-
       body: JSON.stringify({
-        model: "openai/gpt-5.6-sol",
-        reasoning_effort: "none",
+        model: provider.model,
+        ...provider.extra,
+
         messages: [
           {
             role: "system",
