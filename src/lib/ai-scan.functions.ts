@@ -53,7 +53,7 @@ const FIELDS = [
  * Set ONE of these in the host's environment variables:
  *   LOVABLE_API_KEY  – Lovable AI Gateway (auto-set inside Lovable, copy it to Vercel to reuse it)
  *   OPENAI_API_KEY   – OpenAI directly (optional AI_MODEL, default gpt-4o)
- *   GEMINI_API_KEY   – Google Gemini (optional AI_MODEL, default gemini-2.5-flash)
+ *   GEMINI_API_KEY   – Google Gemini (optional AI_MODEL, default gemini-1.5-flash)
  * Optional for any provider: AI_BASE_URL (OpenAI-compatible base, no trailing /chat/completions)
  */
 type Provider = {
@@ -93,7 +93,7 @@ function resolveProvider(): Provider | null {
     return {
       url: `${baseOverride || "https://generativelanguage.googleapis.com/v1beta/openai"}/chat/completions`,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${gemini}` },
-      model: model || "gemini-2.5-flash",
+      model: model || "gemini-1.5-flash",
       extra: {},
     };
   }

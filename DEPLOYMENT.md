@@ -10,7 +10,7 @@ environment — nothing is preview-only, and no key is ever exposed to the brows
 | --- | --- | --- |
 | `LOVABLE_API_KEY` | Lovable AI Gateway | Auto-provisioned inside Lovable. Copy the same value into any external host to keep identical behaviour. |
 | `OPENAI_API_KEY` | OpenAI | Uses `gpt-4o` by default. |
-| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Google Gemini | Uses `gemini-2.5-flash` by default (Gemini's OpenAI-compatible endpoint). |
+| `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) | Google Gemini | Uses `gemini-1.5-flash` by default (Gemini's OpenAI-compatible endpoint). |
 
 Resolution order: `LOVABLE_API_KEY` → `OPENAI_API_KEY` → `GEMINI_API_KEY`/`GOOGLE_API_KEY`.
 If none is set, the scan fails with a clear message telling you which variable to add.
