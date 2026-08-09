@@ -18,7 +18,7 @@ import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
   RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList,
   Flame as FlameIcon, Activity, Camera, ImageOff, Table2, Paperclip, UserCog,
-  Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles,
+  Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles, ScanText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
@@ -270,7 +270,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToExcel(filtered, userLabel)}><FileSpreadsheet className="h-4 w-4 mr-1" aria-hidden />Excel</Button>
             <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, userLabel)}><Table2 className="h-4 w-4 mr-1" aria-hidden />CSV</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered, userLabel)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
-            {canWrite && <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}><Sparkles className="h-4 w-4 mr-1" aria-hidden />AI Scan</Button>}
+            {canWrite && <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}><ScanText className="h-4 w-4 mr-1" aria-hidden />Photo Scan</Button>}
             <Button variant="outline" size="sm" onClick={() => navigate({ to: "/assistant" })}><Sparkles className="h-4 w-4 mr-1" aria-hidden />Assistant</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
             <Button variant="outline" size="sm" aria-label="My profile" onClick={() => navigate({ to: "/profile" })}><UserCog className="h-4 w-4" aria-hidden /></Button>
