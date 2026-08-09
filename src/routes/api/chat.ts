@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages are required", { status: 400 });
         }
 
-        const model = process.env["GEMINI_MODEL"]?.trim() || "gemini-1.5-flash";
+        const model = process.env["GEMINI_MODEL"]?.trim() || "gemini-3.5-flash";
         const base =
           process.env["AI_BASE_URL"]?.trim().replace(/\/+$/, "") ||
           "https://generativelanguage.googleapis.com/v1beta/openai";

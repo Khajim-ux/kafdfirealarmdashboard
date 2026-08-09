@@ -42,3 +42,14 @@ VITE_SUPABASE_PROJECT_ID=...
   settings and redeploy.
 
 > Never prefix an AI key with `VITE_` — that would ship it to the browser.
+
+## Gemini chat assistant (`/assistant`)
+
+The chat page streams from `src/routes/api/chat.ts` using Gemini's
+OpenAI-compatible endpoint.
+
+| Variable | Purpose |
+| --- | --- |
+| `GEMINI_API_KEY` | **Required** for the assistant. |
+| `GEMINI_MODEL` | Optional model override (default `gemini-3.5-flash`). |
+| `AI_BASE_URL` | Optional base URL override. |
