@@ -13,9 +13,9 @@ import { QrCode, Camera, ScanLine, Sparkles } from "lucide-react";
 import { QrScannerDialog } from "./qr-scanner-dialog";
 import { SearchableSelect } from "./searchable-select";
 import { useAuth } from "@/hooks/use-auth";
-import { useServerFn } from "@tanstack/react-start";
-import { scanPanelPhoto } from "@/lib/ai-scan.functions";
-import { findExistingDevice, matchDeviceType, matchEventType, matchParcel } from "@/lib/device-match";
+import { scanPhoto } from "@/lib/ocr";
+import { findExistingDevice } from "@/lib/device-match";
+
 
 
 type FormShape = Partial<Trouble>;
