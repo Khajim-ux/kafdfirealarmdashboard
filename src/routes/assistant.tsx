@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -32,6 +34,7 @@ export const Route = createFileRoute("/assistant")({
 });
 
 function AssistantPage() {
+  const { user, role, loading, canUseAssistant } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,16 +46,22 @@ function AssistantPage() {
 
   async function send() {
     const text = input.trim();
-    if (!text || busy) return;
+    if (!text || busy || !canUseAssistant) return;
     const next: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setInput("");
     setBusy(true);
 
     try {
+      const { data: sess } = await supabase.auth.getSession();
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(sess.session?.access_token
+            ? { Authorization: `Bearer ${sess.session.access_token}` }
+            : {}),
+        },
         body: JSON.stringify({ messages: next }),
       });
       if (!res.ok || !res.body) throw new Error(await res.text());
@@ -116,6 +125,17 @@ function AssistantPage() {
         </div>
       </header>
 
+      {!loading && !canUseAssistant && (
+        <div className="rounded-md border border-destructive/50 p-3 text-sm">
+          <p className="font-medium">Limited access</p>
+          <p className="text-muted-foreground">
+            {user
+              ? `Your role (${role ?? "viewer"}) can read this page but cannot chat with the AI assistant. Ask an admin for Operator or Admin access.`
+              : "Sign in with an Admin or Operator account to chat with the AI assistant."}
+          </p>
+        </div>
+      )}
+
       <section aria-label="Conversation" className="flex-1 space-y-3 overflow-y-auto rounded-md border p-3">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">
@@ -154,7 +174,8 @@ function AssistantPage() {
         <Textarea
           rows={2}
           value={input}
-          placeholder="Ask the assistant…"
+          disabled={!canUseAssistant}
+          placeholder={canUseAssistant ? "Ask the assistant…" : "Read-only access"}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -163,7 +184,7 @@ function AssistantPage() {
             }
           }}
         />
-        <Button type="submit" disabled={busy || !input.trim()} aria-label="Send message">
+        <Button type="submit" disabled={busy || !input.trim() || !canUseAssistant} aria-label="Send message">
           <Send className="h-4 w-4" />
         </Button>
       </form>
