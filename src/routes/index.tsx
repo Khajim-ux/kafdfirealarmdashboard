@@ -18,7 +18,7 @@ import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
   RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList,
   Flame as FlameIcon, Activity, Camera, ImageOff, Table2, Paperclip, UserCog,
-  Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles,
+  Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles, ScanText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, startOfMonth } from "date-fns";
