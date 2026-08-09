@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
 
 const SYSTEM_PROMPT =
   "You are the assistant inside a Fire Alarm Management Dashboard. Help operators with fire alarm panels (EST3, EST4, Notifier, Simplex, Siemens, Edwards, Honeywell), troubleshooting troubles/supervisory/alarm events, device types, loops, zones and reporting. Be concise and practical. Use markdown.";
+
+const ALLOWED_ROLES = ["admin", "operator"];
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -14,6 +17,34 @@ export const Route = createFileRoute("/api/chat")({
           return new Response(
             "Gemini is not configured. Add a GEMINI_API_KEY environment variable and redeploy.",
             { status: 500 },
+          );
+        }
+
+        // Role gate: only Admin and Operator may use the assistant.
+        const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "").trim();
+        if (!token) return new Response("Sign in to use the assistant.", { status: 401 });
+
+        const supabase = createClient(
+          process.env["SUPABASE_URL"]!,
+          process.env["SUPABASE_PUBLISHABLE_KEY"]!,
+          {
+            auth: { persistSession: false, autoRefreshToken: false },
+            global: { headers: { Authorization: `Bearer ${token}` } },
+          },
+        );
+        const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+        if (userErr || !userData.user) {
+          return new Response("Your session has expired. Sign in again.", { status: 401 });
+        }
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userData.user.id);
+        const roles = (roleRows ?? []).map((r) => String(r.role));
+        if (!roles.some((r) => ALLOWED_ROLES.includes(r))) {
+          return new Response(
+            "Your role has view-only access. Ask an admin for Operator or Admin access to use the AI assistant.",
+            { status: 403 },
           );
         }
 
