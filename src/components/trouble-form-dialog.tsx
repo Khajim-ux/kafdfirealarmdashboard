@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PARCELS, ALARM_TYPES, STATUSES, DEVICE_TYPES, EVENT_TYPES, PHOTO_STATUSES, PRIORITIES, ACTIVE_STATUSES, type Trouble } from "@/lib/constants";
 import { generateQrDataUrl } from "@/lib/exports";
 import { toast } from "sonner";
-import { QrCode, Camera, ScanLine, Sparkles } from "lucide-react";
+import { QrCode, Camera, ScanLine, ScanText } from "lucide-react";
 import { QrScannerDialog } from "./qr-scanner-dialog";
 import { SearchableSelect } from "./searchable-select";
 import { useAuth } from "@/hooks/use-auth";
