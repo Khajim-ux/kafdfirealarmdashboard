@@ -29,7 +29,7 @@ export function TroubleFormDialog({
   onSaved: () => void;
 }) {
   const { user } = useAuth();
-  const runScan = useServerFn(scanPanelPhoto);
+  const [scanProgress, setScanProgress] = useState(0);
   const [form, setForm] = useState<FormShape>({});
   const [busy, setBusy] = useState(false);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
