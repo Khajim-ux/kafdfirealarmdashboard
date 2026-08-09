@@ -193,11 +193,12 @@ export function TroubleFormDialog({
             <DialogDescription>All fields save permanently to the database.</DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border border-dashed p-3 space-y-2">
-            <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI Photo Scan</Label>
-            <p className="text-xs text-muted-foreground">Take a photo of the panel screen or device label — AI reads panel name/ID, loop, device address, type, floor, location and event details.</p>
+            <Label className="flex items-center gap-2"><ScanText className="h-4 w-4 text-primary" /> Photo Scan (offline OCR)</Label>
+            <p className="text-xs text-muted-foreground">Take a photo of the panel screen or device label — text is read on your device to fill panel, loop, device address, type, floor, location and event details.</p>
             <Input type="file" accept="image/*" capture="environment" disabled={scanning}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleAiScan(f); e.target.value = ""; }} />
-            {scanning && <p className="text-xs text-muted-foreground">Scanning photo…</p>}
+            {scanning && <p className="text-xs text-muted-foreground">Reading text… {scanProgress}%</p>}
+
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
