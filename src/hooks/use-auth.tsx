@@ -8,11 +8,15 @@ interface AuthCtx {
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
+  /** Roles allowed to chat with the AI assistant */
+  canUseAssistant: boolean;
   signOut: () => Promise<void>;
 }
 
+const ASSISTANT_ROLES: AppRole[] = ["admin", "operator"];
+
 const Ctx = createContext<AuthCtx>({
-  user: null, session: null, role: null, loading: true, signOut: async () => {},
+  user: null, session: null, role: null, loading: true, canUseAssistant: false, signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         role,
         loading,
+        canUseAssistant: role ? ASSISTANT_ROLES.includes(role) : false,
         signOut: async () => { await supabase.auth.signOut(); },
       }}
     >
