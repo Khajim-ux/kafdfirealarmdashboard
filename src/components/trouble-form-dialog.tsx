@@ -60,62 +60,52 @@ export function TroubleFormDialog({
 
   async function handleAiScan(file: File) {
     setScanning(true);
+    setScanProgress(0);
     try {
-      const imageDataUrl: string = await new Promise((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result));
-        fr.onerror = () => reject(new Error("Could not read the image"));
-        fr.readAsDataURL(file);
-      });
-      const r = await runScan({ data: { imageDataUrl } });
-
-      const panel = r.panel_name || r.panel_id || null;
-      const loop = r.loop || null;
-      const deviceNumber = r.device_address || null;
+      const r = await scanPhoto(file, setScanProgress);
+      const f0 = r.fields;
 
       // Link the scan to an existing device record so previously entered
       // details (tower, floor, location, tenant, type) are reused.
       const known = await findExistingDevice({
-        device_id: r.panel_id || r.device_address || null,
-        panel,
-        loop,
-        device_number: deviceNumber,
-      });
-
-      const deviceType =
-        matchDeviceType(r.device_type) ||
-        matchDeviceType(r.event_details) ||
-        known?.device_type ||
-        null;
-      const eventType = matchEventType(r.event_details) || matchEventType(r.device_type);
-      const parcel = matchParcel(r.location, r.panel_name, r.panel_id) || known?.parcel || null;
+        device_id: f0.device_id,
+        panel: f0.panel,
+        loop: f0.loop,
+        device_number: f0.device_number,
+      }).catch(() => null);
 
       const linked: string[] = [];
       if (known) linked.push("existing device record");
-      if (deviceType) linked.push("device type");
-      if (eventType) linked.push("event type");
-      if (parcel) linked.push("tower");
+      if (f0.device_type) linked.push("device type");
+      if (f0.event_type) linked.push("event type");
+      if (f0.parcel) linked.push("tower");
 
       setForm((f) => ({
         ...f,
-        panel: panel || known?.panel || f.panel,
-        device_id: f.device_id || r.panel_id || known?.device_id || r.device_address || "",
-        loop: loop || known?.loop || f.loop,
-        zone: f.zone || known?.zone || f.zone,
-        device_number: deviceNumber || known?.device_number || f.device_number,
-        device_type: deviceType || f.device_type,
-        event_type: eventType || f.event_type,
-        parcel: parcel || f.parcel,
-        floor: r.floor || known?.floor || f.floor,
-        location: r.location || known?.location || f.location,
+        panel: f0.panel || known?.panel || f.panel,
+        device_id: f.device_id || f0.device_id || known?.device_id || "",
+        loop: f0.loop || known?.loop || f.loop,
+        zone: f0.zone || known?.zone || f.zone,
+        device_number: f0.device_number || known?.device_number || f.device_number,
+        device_type: f0.device_type || known?.device_type || f.device_type,
+        event_type: f0.event_type || f.event_type,
+        parcel: f0.parcel || known?.parcel || f.parcel,
+        floor: f0.floor || known?.floor || f.floor,
+        location: f0.location || known?.location || f.location,
         tenant: f.tenant || known?.tenant || f.tenant,
-        description: r.event_details || f.description,
+        fault_name: f0.fault_name || f.fault_name,
+        description: f.description || r.text.slice(0, 1000),
       }));
-      toast.success(
-        linked.length
-          ? `Photo scanned — auto-linked ${linked.join(", ")}. Please review.`
-          : "Photo scanned — please review the filled fields",
-      );
+      if (r.confidence < 0.7) {
+        toast.warning("OCR confidence is low. Please verify the information before saving.");
+      } else {
+        toast.success(
+          linked.length
+            ? `Photo scanned — auto-linked ${linked.join(", ")}. Please review.`
+            : "Photo scanned — please review the filled fields",
+        );
+      }
+
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI scan failed");
     } finally {
