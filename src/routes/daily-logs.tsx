@@ -211,16 +211,6 @@ function DailyLogsPage() {
     URL.revokeObjectURL(url);
   }
 
-  // group by date, newest date first
-  const grouped = useMemo(() => {
-    const map = new Map<string, DailyLog[]>();
-    for (const l of logs) {
-      const arr = map.get(l.log_date) ?? [];
-      arr.push(arr.length, l as never).pop; // placeholder no-op
-      arr.push;
-    }
-    return map;
-  }, [logs]);
 
   if (loading || !user) return null;
 
