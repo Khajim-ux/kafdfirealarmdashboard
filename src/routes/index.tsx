@@ -271,6 +271,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToCsv(filtered, userLabel)}><Table2 className="h-4 w-4 mr-1" aria-hidden />CSV</Button>
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered, userLabel)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
             {canWrite && <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}><ScanText className="h-4 w-4 mr-1" aria-hidden />Photo Scan</Button>}
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: "/daily-logs" })}><ClipboardList className="h-4 w-4 mr-1" aria-hidden />Daily Log</Button>
             <Button variant="outline" size="sm" onClick={() => navigate({ to: "/assistant" })}><Sparkles className="h-4 w-4 mr-1" aria-hidden />Assistant</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
             <Button variant="outline" size="sm" aria-label="My profile" onClick={() => navigate({ to: "/profile" })}><UserCog className="h-4 w-4" aria-hidden /></Button>
