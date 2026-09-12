@@ -44,6 +44,72 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_logs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event: string
+          fire_incident: number
+          ground_fault: number
+          id: string
+          isolated_area: string | null
+          isolation_disabled: number
+          log_date: string
+          maintenance_alert: number
+          open_short: number
+          operator_id: string | null
+          operator_name: string | null
+          parcel: string
+          remarks: string | null
+          shift: string
+          supervisory: number
+          total_trouble: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event?: string
+          fire_incident?: number
+          ground_fault?: number
+          id?: string
+          isolated_area?: string | null
+          isolation_disabled?: number
+          log_date?: string
+          maintenance_alert?: number
+          open_short?: number
+          operator_id?: string | null
+          operator_name?: string | null
+          parcel: string
+          remarks?: string | null
+          shift?: string
+          supervisory?: number
+          total_trouble?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event?: string
+          fire_incident?: number
+          ground_fault?: number
+          id?: string
+          isolated_area?: string | null
+          isolation_disabled?: number
+          log_date?: string
+          maintenance_alert?: number
+          open_short?: number
+          operator_id?: string | null
+          operator_name?: string | null
+          parcel?: string
+          remarks?: string | null
+          shift?: string
+          supervisory?: number
+          total_trouble?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
