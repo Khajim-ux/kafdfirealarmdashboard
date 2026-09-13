@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ExportRouteImport } from './routes/export'
 import { Route as DailyLogsRouteImport } from './routes/daily-logs'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssistantRouteImport } from './routes/assistant'
@@ -31,6 +32,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExportRoute = ExportRouteImport.update({
+  id: '/export',
+  path: '/export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DailyLogsRoute = DailyLogsRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
   '/daily-logs': typeof DailyLogsRoute
+  '/export': typeof ExportRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/users': typeof UsersRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
   '/daily-logs': typeof DailyLogsRoute
+  '/export': typeof ExportRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/users': typeof UsersRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
   '/daily-logs': typeof DailyLogsRoute
+  '/export': typeof ExportRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/users': typeof UsersRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/auth'
     | '/daily-logs'
+    | '/export'
     | '/profile'
     | '/reset-password'
     | '/users'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/auth'
     | '/daily-logs'
+    | '/export'
     | '/profile'
     | '/reset-password'
     | '/users'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/auth'
     | '/daily-logs'
+    | '/export'
     | '/profile'
     | '/reset-password'
     | '/users'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AssistantRoute: typeof AssistantRoute
   AuthRoute: typeof AuthRoute
   DailyLogsRoute: typeof DailyLogsRoute
+  ExportRoute: typeof ExportRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   UsersRoute: typeof UsersRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/export': {
+      id: '/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof ExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daily-logs': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistantRoute: AssistantRoute,
   AuthRoute: AuthRoute,
   DailyLogsRoute: DailyLogsRoute,
+  ExportRoute: ExportRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   UsersRoute: UsersRoute,
