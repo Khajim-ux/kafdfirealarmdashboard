@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Flame, ShieldAlert, PowerOff, CheckCircle2, Plus, Search,
-  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList,
+  RefreshCw, LogOut, FileText, FileSpreadsheet, Trash2, Pencil, ClipboardList, FileDown,
   Flame as FlameIcon, Activity, Camera, ImageOff, Table2, Paperclip, UserCog,
   Bell, Wrench, RotateCcw, Wind, Droplets, Sparkles, ScanText,
 } from "lucide-react";
@@ -272,6 +272,7 @@ function Dashboard() {
             <Button variant="outline" size="sm" onClick={() => exportToPdf(filtered, userLabel)}><FileText className="h-4 w-4 mr-1" aria-hidden />PDF</Button>
             {canWrite && <Button variant="secondary" size="sm" onClick={() => setScanOpen(true)}><ScanText className="h-4 w-4 mr-1" aria-hidden />Photo Scan</Button>}
             <Button variant="outline" size="sm" onClick={() => navigate({ to: "/daily-logs" })}><ClipboardList className="h-4 w-4 mr-1" aria-hidden />Daily Log</Button>
+            <Button variant="outline" size="sm" aria-label="Export page" onClick={() => navigate({ to: "/export" })}><FileDown className="h-4 w-4 mr-1" aria-hidden />Export</Button>
             <Button variant="outline" size="sm" onClick={() => navigate({ to: "/assistant" })}><Sparkles className="h-4 w-4 mr-1" aria-hidden />Assistant</Button>
             {canWrite && <Button size="sm" onClick={() => { setEditRow(null); setDialogOpen(true); }}><Plus className="h-4 w-4 mr-1" aria-hidden />New</Button>}
             <Button variant="outline" size="sm" aria-label="My profile" onClick={() => navigate({ to: "/profile" })}><UserCog className="h-4 w-4" aria-hidden /></Button>
