@@ -26,6 +26,7 @@ import { TroubleFormDialog } from "@/components/trouble-form-dialog";
 import { AiAutoScanDialog } from "@/components/ai-auto-scan-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { SearchableSelect } from "@/components/searchable-select";
+import { KafdMap } from "@/components/kafd-map";
 import { exportToExcel, exportToPdf, exportToCsv } from "@/lib/exports";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
 
@@ -314,6 +315,16 @@ function Dashboard() {
           </div>
         </section>
 
+        {/* KAFD Map */}
+        <KafdMap
+          rows={rows}
+          selected={fParcel}
+          onSelect={(parcel) => {
+            setFParcel(parcel);
+            document.getElementById("records-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
+
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card>
@@ -411,7 +422,7 @@ function Dashboard() {
         </Card>
 
         {/* Tabs: Table + Audit */}
-        <Tabs defaultValue="records">
+        <Tabs defaultValue="records" id="records-section">
           <TabsList>
             <TabsTrigger value="records"><ClipboardList className="h-4 w-4 mr-1" />Records</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
