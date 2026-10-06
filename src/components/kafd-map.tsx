@@ -67,7 +67,7 @@ export function KafdMap({ rows, selected, onSelect }: Props) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <MapPin className="h-4 w-4" aria-hidden /> KAFD Map — All Towers
+          <MapPin className="h-4 w-4" aria-hidden /> KAFD Map — Area 3 &amp; Area 5
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           Tap a tower circle to open its trouble tracker list.
@@ -106,10 +106,6 @@ export function KafdMap({ rows, selected, onSelect }: Props) {
             <path d="M 5 95 Q 30 60 55 50 T 95 20" fill="none" stroke="rgba(148,163,184,0.35)" strokeWidth="1.6" />
             <path d="M 8 100 Q 40 85 70 70 T 96 40" fill="none" stroke="rgba(148,163,184,0.25)" strokeWidth="1.2" />
             <path d="M 20 40 Q 40 55 60 90" fill="none" stroke="rgba(148,163,184,0.25)" strokeWidth="1.2" />
-            <path d="M 60 10 Q 70 30 78 60" fill="none" stroke="rgba(148,163,184,0.2)" strokeWidth="1" />
-            <text x="70" y="14" fill="rgba(148,163,184,0.6)" fontSize="4" fontWeight="600">AREA 4</text>
-            <text x="80" y="46" fill="rgba(148,163,184,0.6)" fontSize="4" fontWeight="600">AREA 2</text>
-            <text x="60" y="80" fill="rgba(148,163,184,0.6)" fontSize="4" fontWeight="600">AREA 1</text>
             <text x="18" y="42" fill="rgba(148,163,184,0.6)" fontSize="4" fontWeight="600">AREA 5</text>
             <text x="28" y="106" fill="rgba(148,163,184,0.6)" fontSize="4" fontWeight="600">AREA 3</text>
           </svg>
